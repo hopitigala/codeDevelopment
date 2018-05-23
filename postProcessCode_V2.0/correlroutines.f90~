@@ -1,0 +1,191 @@
+PROGRAM corelProgram
+  USE mainParameters
+  IMPLICIT NONE
+  INTEGER::irough,z0,y0,x0,varble1,varble2
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:)::corlcoe
+  CALL readOptions(varble1,varble2,z0,y0,x0,irough)
+  IF(irough==0)Then
+     ALLOCATE(corlcoe(-(Nz-1):(Nz-1),Ny,Nx))
+     CALL spatialCorel_1Dhomo(varble1,varble2,Nz,Ny,Nx,y0,x0,Nvar,corlcoe)
+     CALL writeCorlCoe_1Dhomo(corlcoe,Nz,Ny,Nx,varble1,varble2,y0,x0)
+     DEALLOCATE(corlcoe)
+  ELSE
+     write(*,*)'rough case'
+     ALLOCATE(corlcoe(Nz,Ny,Nx))
+     CALL spatialCorel_inhomo(varble1,varble2,Nz,Ny,Nx,z0,y0,x0,Nvar,corlcoe)
+     CALL writeCorlCoe_inhomo(corlcoe,Nz,Ny,Nz,varble1,varble2,z0,y0,x0)
+     DEALLOCATE(corlcoe)
+  END IF
+END PROGRAM corelProgram
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! SUBROUTINE spatialCorel_1Dhomo: two-point correlations are computed        !!
+!!                                                                            !!
+!! !!
+!! !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+SUBROUTINE spatialCorel_1Dhomo(varnum1,varnum2,D1,D2,D3,J0,K0,Numvar,corlcoe)
+  IMPLICIT NONE
+  INTEGER,INTENT(IN)::varnum1,varnum2,D1,D2,D3,J0,K0,Numvar
+  REAL*8,INTENT(OUT)::corlcoe(-(D1-1):(D1-1),D2,D3)
+  REAL*8,ALLOCATABLE,DIMENSION(:)::x,y
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:,:)::instVar
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:)::meanVar
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:)::inst1,inst2
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:)::fluc1,fluc2
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:)::flucsq1,flucsq2
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:)::covar
+  REAL*8,ALLOCATABLE,DIMENSION(:,:)::mean1,mean2
+  REAL*8,ALLOCATABLE,DIMENSION(:,:)::rms1zav,rms2zav
+  COMPLEX(KIND=8),ALLOCATABLE,DIMENSION(:,:,:)::RhatInst,Rhat
+  REAL*8::varY0X0
+ INTEGER::t,stTime,noofTsteps,dt,tstpcount
+  LOGICAL::ex
+
+  ALLOCATE(meanVar(D2,D3,Numvar))
+  ALLOCATE(x(D3),y(D2))
+  CALL read2DMeanFieldData(D2,D3,Numvar,meanVar,x,y)
+  INQUIRE(FILE='coordinates.dat',EXIST=ex)
+  IF(ex==.false.)Then
+     CALL writeCordinate_inhomo(x,y,D1,D2,D3)
+     DEALLOCATE(x,y)
+  ELSE
+     WRITE(*,*)'coordinates.dat file exists'
+  END IF
+  ALLOCATE(mean1(D2,D3),mean2(D2,D3))
+  CALL ary3Dtoary2D(meanVar,D2,D3,NumVar,varnum1,mean1)
+  CALL ary3Dtoary2D(meanVar,D2,D3,NumVar,varnum2,mean2)
+  DEALLOCATE(meanVar)
+  ALLOCATE(flucsq1(D1,D2,D3),flucsq2(D1,D2,D3))
+  ALLOCATE(Rhat(2*D1,D2,D3))
+  CALL setZero3DAry(flucsq1,D1,D2,D3)
+  CALL setZero3DAry(flucsq2,D1,D2,D3)
+  CALL set3dCmplxAryZero(Rhat,2*D1,D2,D3)
+  tstpcount=0
+  CALL readTimeData(stTime,noofTsteps,dt)
+  DO t=stTime,(stTime+noofTsteps*dt),dt
+     tstpcount=tstpcount+1
+     ALLOCATE(instVar(D1,D2,D3,Numvar))
+     CALL readInstFieldData(D1,D2,D3,Numvar,t,instVar)
+     ALLOCATE(inst1(D1,D2,D3),inst2(D1,D2,D3))
+     CALL ary4Dtoary3D(instVar,D1,D2,D3,Numvar,varnum1,inst1)
+ CALL ary4Dtoary3D(instVar,D1,D2,D3,Numvar,varnum2,inst2)
+     DEALLOCATE(instVar)
+     ALLOCATE(fluc1(D1,D2,D3),fluc2(D1,D2,D3))
+     CALL fluc_2DMean(inst1,mean1,D1,D2,D3,fluc1)
+     CALL fluc_2DMean(inst2,mean2,D1,D2,D3,fluc2)
+     DEALLOCATE(inst1,inst2)
+     ALLOCATE(RhatInst(2*D1,D2,D3))
+     CALL compRhatInst_1Dhomo(fluc1,fluc2,D1,D2,D3,J0,K0,RhatInst)
+     CALL tAddcmplx3dAry(RhatInst,2*D1,D2,D3,Rhat)
+     DEALLOCATE(RhatInst)
+     CALL taddReySt(fluc1,fluc1,D1,D2,D3,flucsq1)
+     CALL taddReySt(fluc2,fluc2,D1,D2,D3,flucsq2)
+     DEALLOCATE(fluc1)
+     DEALLOCATE(fluc2)
+  END DO
+  DEALLOCATE(mean1,mean2)
+  ALLOCATE(rms1zav(D2,D3))
+  CALL RMS_1Dhomo(flucsq1,D1,D2,D3,tstpcount,rms1zav)
+  DEALLOCATE(flucsq1)
+  ALLOCATE(rms2zav(D2,D3))
+  CALL RMS_1Dhomo(flucsq2,D1,D2,D3,tstpcount,rms2zav)
+  DEALLOCATE(flucsq2)
+  !write(*,*)'totrahat',Rhat(1,30,200)
+  CALL tavgCmplx3DAry(Rhat,2*D1,D2,D3,tstpcount)
+  !write(*,*)'tavgrahat',Rhat(1,30,200)
+  ALLOCATE(covar(2*D1,D2,D3))
+  CALL covar_1Dhomo(Rhat,2*D1,D2,D3,covar)
+ DEALLOCATE(Rhat)
+  CALL valFrm2DAryAtY0X0(rms2zav,D2,D3,J0,K0,varY0X0)
+  DEALLOCATE(rms2zav)
+  CALL corlcoeficent_1Dhomo(covar,2*D1,D2,D3,varY0X0,rms1zav,corlcoe)
+  DEALLOCATE(covar)
+  DEALLOCATE(rms1zav)
+END SUBROUTINE spatialCorel_1Dhomo
+
+
+SUBROUTINE writeCorlCoe_1Dhomo(corlcoe,D1,D2,D3,varnum1,varnum2,J0,K0)
+  IMPLICIT NONE
+  INTEGER,INTENT(IN)::D1,D2,D3,varnum1,varnum2,J0,K0
+  REAL*8,INTENT(IN)::corlcoe(-(D1-1):(D1-1),D2,D3)
+  CHARACTER(LEN=100)::filename
+  CHARACTER(LEN=1)::vari1,vari2
+  CHARACTER(LEN=3)::yprm,xprm
+  CHARACTER(LEN=*),PARAMETER::FMT='(ES13.5e2)'
+  INTEGER::Ilag,J,K
+  WRITE(vari1,'(I1.1)')varnum1
+  WRITE(vari2,'(I1.1)')varnum2
+
+  IF(J0<10)THEN
+     WRITE(yprm,'(I1.1)')J0
+  ELSEIF(J0<100)THEN
+     WRITE(yprm,'(I2.2)')J0
+  ELSE
+     WRITE(yprm,'(I3.3)')J0
+  END IF
+
+    IF(K0<10)THEN
+     WRITE(xprm,'(I1.1)')K0
+  ELSEIF(K0<100)THEN
+     WRITE(xprm,'(I2.2)')K0
+  ELSE
+     WRITE(xprm,'(I3.3)')K0
+ END IF
+  filename='corelcoe_'//TRIM(vari1)//'_'//TRIM(vari2)//'_y0_'//TRIM(yprm)//'_x0_'//TRIM(xprm\
+)//'_.dat'
+  OPEN(10,FILE=filename)
+  DO J=2,D2
+     DO K=2,D3
+        DO Ilag=-(D1-1),(D1-1)
+           WRITE(10,FMT)corlcoe(Ilag,J,K)
+        END DO
+     END DO
+  END DO
+END SUBROUTINE writeCorlCoe_1Dhomo
+
+
+SUBROUTINE corlcoeficent_1Dhomo(covarAry,D1,D2,D3,varY0X0,varAry,corlcoe)
+  IMPLICIT NONE
+  INTEGER,INTENT(IN)::D1,D2,D3
+  REAL*8,INTENT(IN)::covarAry(D1,D2,D3)
+  REAL*8,INTENT(IN)::varAry(D2,D3)
+  REAL*8,INTENT(IN)::varY0X0
+  REAL*8,INTENT(OUT)::corlcoe(-(D1/2-1):(D1/2-1),D2,D3)
+  INTEGER::Ilag,klag,I,J,K
+  REAL*8,DIMENSION(:,:),ALLOCATABLE::inv
+  ALLOCATE(inv(D2,D3))
+  DO K=1,D3
+     DO J=1,D2
+        inv(J,K)=1.0/(varY0X0*varAry(J,K))
+        !write(*,*)'inv',inv(J,K),'J',J,'K',K
+     END DO
+  END DO
+  DO K=1,D3
+     DO J=1,D2
+        DO Ilag=-(D1/2-1),(D1/2-1)
+           I=Ilag+D1/2+1
+           !K=Klag+D3/2+1
+           corlcoe(Ilag,J,K)=covarAry(I,J,K)*inv(J,K)
+        END DO
+     END DO
+  END DO
+!  write(*,*)'covarary',covarAry(126,30,200)
+  DEALLOCATE(inv)
+END SUBROUTINE corlcoeficent_1Dhomo
+
+SUBROUTINE covar_1Dhomo(Rhat,D1,D2,D3,covar)
+  IMPLICIT NONE
+  INTEGER, INTENT(IN):: D1,D2,D3
+  COMPLEX(KIND=8),INTENT(IN)::Rhat(D1,D2,D3)
+  REAL*8,INTENT(OUT)::covar(D1,D2,D3)
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:)::invRhat
+  ALLOCATE(invRhat(D1,D2,D3))
+  CALL oneDInvFFT3Dary(Rhat,D1,D2,D3,invRhat)
+  !write(*,*)'invRhat',invRhat(1,30,200)
+  CALL oneDinvFFTShift3Dary(invRhat,D1,D2,D3,covar)
+ ! write(*,*)'covar',covar(126,30,200)
+  DEALLOCATE(invRhat)
+END SUBROUTINE covar_1Dhomo
+
+

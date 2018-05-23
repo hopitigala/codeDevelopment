@@ -1,0 +1,43 @@
+#beginning of the makefile
+MF = make_pod
+FC = mpif90
+OLEVEL = -O2 
+BUFIO= -assume buffered_io
+MKLSW  = -mkl
+#VECOPT = -xhost
+#MKINC  = -I${MKLROOT}/include
+IPO = -ipo
+#DBOPTS = -g -traceback
+FFLAGS = $(OLEVEL) $(BUFIO) $(DBOPTS) $(VECOPT) $(IPO) $(MKINC)	$(MKLSW)
+#MKLIBS = -L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread -lm -ldl
+#FLIBS = -L/work/03390/sdharmar/lonestar/apps/lapack-3.5.0 -llapack -lrefblas -lgfortran
+LFLAGS = $(OLEVEL) $(BUFIO) $(VECOPT) $(IPO) $(MKINC) $(MKLSW)
+vpath %.f90 src
+OBJDIR=objects
+EXE =  pod_3dexe
+SRC =  modules.f90\
+    interpol.f90\
+    readData.f90\
+    arrayops.f90\
+    fluctuation.f90\
+    writeData.f90\
+    integrations.f90\
+    fftpack.f90\
+    mathops.f90\
+    pod_3d_routines.f90\
+    podprogram_3d_new.f90\
+#
+# No need to edit below this line
+#
+#.SUFFIXES:
+#.SUFFIXES: .f90 .o .mod
+
+OBJ= $(SRC:.f90=.o)
+
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $<
+
+$(EXE):	$(OBJ)
+	$(FC) $(LFLAGS) -o $@ $(OBJ) $(FLIBS) $(MKLIBS)
+clean:
+	rm -f *.mod $(OBJ) $(EXE)

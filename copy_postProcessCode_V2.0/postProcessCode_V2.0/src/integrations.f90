@@ -1,0 +1,338 @@
+!subroutine trapz3d_eq(func3d,d1,d2,d3,a,b,sum2d)
+!  implicit none
+!  integer,intent(in)::d1,d2,d3
+!  real*8,intent(in)::func3d(d1,d2,d3)
+!  real*8,intent(out)::sum2d(d1,d2)
+!  real*8,intent(in)::a,b
+!  integer::k
+!  real*8::delx
+  ! integrate over the 3rd dimension of the array
+  !d3=size(func3d,3)
+!  delx=(b-a)/real(d3-1)
+!  sum2d=0.0
+!  sum2d(:,:)=0.5*(func3d(:,:,1)+func3d(:,:,d3))
+!  do k=2,(d3-1)
+!     sum2d(:,:)=sum2d(:,:)+func3d(:,:,k)
+!  end do
+!  sum2d=sum2d*delx
+!end subroutine trapz3d_eq
+
+subroutine trapz3d_eq(func3d,d1,d2,d3,xi,xf,sum2d)
+  use channhdvariables
+  use prelimcalvar
+  implicit none
+  integer,intent(in)::d1,d2,d3
+  real*8,intent(in)::func3d(d1,d2,d3)
+  real*8,intent(out)::sum2d(d1,d2)
+  real*8,intent(in)::xi,xf
+  !integer::k
+  real*8::delx
+  integer::k
+  ! integrate over the 3rd dimension of the array
+ ! write(*,*)'rank',mynode,'is in trapz3d'
+  delx=(xf-xi)/real(d3-1)
+  sum2d=0.0
+  sum2d=0.5*(func3d(:,:,1)+func3d(:,:,d3))
+  do k=2,(d3-1)
+     sum2d=sum2d+func3d(:,:,k)
+  end do
+  sum2d=sum2d*delx
+end subroutine trapz3d_eq
+
+!subroutine trapz3d_3Neq(func3d,d1,d2,d3,a,b,sum2d)
+!  implicit none
+!  integer,intent(in)::d1,d2,d3
+!  real*8,intent(in)::func3d(d1,d2,d3)
+!  real*8,intent(out)::sum2d(d1,d2)
+!  real*8,intent(in)::a,b
+!  integer::k,i,j
+!  real*8::delx
+  ! integrate over the 3rd dimension of the array
+  !d3=size(func3d,3)
+!  delx=(b-a)/real(d3-1)
+!  do j=1,d2
+!     do i=1,d1
+!        sum2d(i,j)=0.0
+!     end do
+!  end do
+!  sum2d=0.5*(func3d(:,:,1)+func3d(:,:,d3))
+!  do k=2,(d3-1)
+!     sum2d=sum2d+func3d(:,:,k)
+!  end do
+!  sum2d=sum2d*delx
+!end subroutine trapz3d_3Neq
+
+subroutine trapz2d_eq(func2d,d1,d2,a,b,sum1d)
+  implicit none
+  integer,intent(in)::d1,d2
+  real*8,intent(in)::func2d(d1,d2)
+  real*8,intent(out)::sum1d(d1)
+  real*8,intent(in)::a,b
+  integer::i
+  real*8::delz
+ ! integrate over the 1st dimension of the array
+  delz=(b-a)/real(d2-1)
+  sum1d=0.0
+  sum1d=sum1d+0.5*(func2d(:,1)+func2d(:,d2))
+  do i=2,(d2-1)
+     sum1d=sum1d+func2d(:,i)
+  end do
+  sum1d=sum1d*delz
+end subroutine trapz2d_eq
+
+subroutine trapz2d_yz(func2d,d1,d2,a,b,sum1d)
+  implicit none
+  integer,intent(in)::d1,d2
+  real*8,intent(in)::func2d(d1,d2)
+  real*8,intent(out)::sum1d(d2)
+  real*8,intent(in)::a,b
+  integer::i
+  real*8::delz
+ ! integrate over the 1st dimension of the array
+  delz=(b-a)/real(d1-1)
+  sum1d=0.0
+  sum1d=sum1d+0.5*(func2d(1,:)+func2d(d1,:))
+  do i=2,(d1-1)
+     sum1d=sum1d+func2d(i,:)
+  end do
+  sum1d=sum1d*delz
+end subroutine trapz2d_yz
+
+!subroutine trapz1d_noneq(func1d,d2,y,summ)
+!  implicit none
+!  integer,intent(in)::d2
+!  real*8,intent(in)::func1d(d2)
+!  real*8,intent(in)::y(d2)
+!  real*8,intent(out)::summ
+!  integer::j
+!  summ=0.0
+!  summ=summ+0.5*(func1d(1)*(y(2)-y(1))+func1d(d2-1)*(y(d2-1)-y(d2-2)))
+!  do j=2,d2-2
+!     summ=summ+func1d(j)*(y(j)-y(j-1))
+!  end do
+
+!end subroutine trapz1d_noneq
+
+
+
+!subroutine trapz2d_noneq(func2d,d1,d2,y,sum1d)
+!  implicit none
+!  integer,intent(in)::d1,d2
+!  real*8,intent(in)::func2d(d1,d2)
+!  real*8,intent(in)::y(d2)
+!  real*8,intent(out)::sum1d(d1)
+!  integer::j
+!  sum1d=0.0
+!  sum1d(:)=sum1d(:)+0.5*(func2d(:,1)*(y(2)-y(1))+func2d(:,d2-1)*(y(d2-1)-y(d2-2)))
+!  do j=2,d2-2
+!     sum1d(:)=sum1d(:)+func2d(:,j)*(y(j)-y(j-1))
+!  end do
+!end subroutine trapz2d_noneq
+
+subroutine trapz1d_eq(func1d,d1,zi,zf,summ)
+  !use MainVariables
+  implicit none
+  integer,intent(in)::d1
+  real*8,intent(in)::func1d(d1)
+  real*8,intent(in)::zi,zf
+  real*8,intent(out)::summ
+  integer::i
+  real*8::delz
+  !d2=size(func1d)
+  !write(*,*)'rank',mynode,'is in trapz1d'
+  delz=(zf-zi)/real(d1-1)
+  summ=0.0
+  summ=summ+0.5*(func1d(1)+func1d(d1))
+  do i=2,d1-1
+     summ=summ+func1d(i)
+  end do
+  summ=summ*delz
+end subroutine trapz1d_eq
+
+subroutine trapz2d_noneq(func2d,d1,d2,y,sum1d)
+  !use MainVariables
+  implicit none
+  integer,intent(in)::d1,d2
+  real*8,intent(in)::func2d(d1,d2)
+  real*8,intent(in)::y(0:d2)
+  real*8,intent(out)::sum1d(d1)
+  integer::j
+  !write(*,*)'rank',mynode,'is in trapz2d'
+  sum1d=0.0
+  sum1d=sum1d+0.5*(func2d(:,1)*(y(2)-y(1))+func2d(:,d2)*(y(d2)-y(d2-1)))
+  !write(*,*)'sum1d assigned',mynode
+  do j=2,d2-1
+     sum1d=sum1d+func2d(:,j)*(y(j)-y(j-1))
+  end do
+  !write(*,*)'sum1d computed',mynode
+end subroutine trapz2d_noneq
+
+subroutine trapz2d_noneq_xy(func2d,d1,d2,y,sum1d)
+  !use MainVariables
+  implicit none
+  integer,intent(in)::d1,d2
+  real*8,intent(in)::func2d(d1,d2)
+  real*8,intent(in)::y(0:d1)
+  real*8,intent(out)::sum1d(d2)
+  integer::j
+  !write(*,*)'rank',mynode,'is in trapz2d'
+  sum1d=0.0
+  sum1d=sum1d+0.5*(func2d(1,:)*(y(2)-y(1))+func2d(d1,:)*(y(d1)-y(d1-1)))
+  !write(*,*)'sum1d assigned',mynode
+  do j=2,d1-1
+     sum1d=sum1d+func2d(j,:)*(y(j)-y(j-1))
+  end do
+  !write(*,*)'sum1d computed',mynode
+end subroutine trapz2d_noneq_xy
+
+subroutine trapz1d_eq_xy(func1d,d2,xi,xf,summ)
+  !use MainVariables
+  implicit none
+  integer,intent(in)::d2
+  real*8,intent(in)::func1d(d2)
+  real*8,intent(in)::xi,xf
+  real*8,intent(out)::summ
+  integer::i
+  real*8::delx
+  !d2=size(func1d)
+  !write(*,*)'rank',mynode,'is in trapz1d'
+  delx=(xf-xi)/real(d2-1)
+  summ=0.0
+  summ=summ+0.5*(func1d(1)+func1d(d2))
+  do i=2,d2-1
+     summ=summ+func1d(i)
+  end do
+  summ=summ*delx
+end subroutine trapz1d_eq_xy
+!subroutine trapz2d_3Nnoneq(func2d,d1,d2,y,sum1d)
+!  implicit none
+!  integer,intent(in)::d1,d2
+!  real*8,intent(in)::func2d(d1,d2)
+!  real*8,intent(in)::y(d2)
+!  real*8,intent(out)::sum1d(d1)
+ ! integer::j,i
+!  do i=1,d1
+!     sum1d(i)=0.0
+!  end do
+!  sum1d=sum1d+0.5*(func2d(:,1)*(y(2)-y(1))+func2d(:,d2-1)*(y(d2-1)-y(d2-2)))
+!  do j=2,d2-2
+!     sum1d=sum1d+func2d(:,j)*(y(j)-y(j-1))
+!  end do
+!end subroutine trapz2d_3Nnoneq
+
+
+!subroutine trapz1d_Neq(func1d,d1,a,b,summ)
+!  implicit none
+!  integer,intent(in)::d1
+!  real*8,intent(in)::func1d(d1)
+!  real*8,intent(in)::a,b
+!  real*8,intent(out)::summ
+!  integer::i
+!  real*8::delz
+  !d2=size(func1d)
+!  delz=(b-a)/real(d1-1)
+!  summ=0.0
+!  summ=summ+0.5*(func1d(1)+func1d(d1))
+!  do i=2,d1-1
+!     summ=summ+func1d(i)
+!  end do
+!  summ=summ*delz
+!end subroutine trapz1d_Neq
+     
+
+subroutine trapezoidal3d(func3d,d1,d2,d3,xi,xf,y,zi,zf,summ)
+ ! use MainVariables
+  implicit none
+  integer,intent(in)::d1,d2,d3
+  real*8,intent(in)::func3d(d1,d2,d3)
+  real*8,intent(in)::y(0:d2)
+  real*8,intent(in)::xi,xf,zi,zf
+  real*8,intent(out)::summ
+  real*8,allocatable,dimension(:,:)::sum2d
+  real*8,allocatable,dimension(:)::sum1d
+!  real*8::start_time,end_time
+  !write(*,*)'rank',mynode,'is in trapezoidal3d'
+ ! call cpu_time(start_time)
+  allocate(sum2d(d1,d2))
+  call trapz3d_eq(func3d,d1,d2,d3,xi,xf,sum2d)
+  allocate(sum1d(d1))
+  call trapz2d_noneq(sum2d,d1,d2,y,sum1d)
+  deallocate(sum2d)
+  call trapz1d_eq(sum1d,d1,zi,zf,summ)
+  deallocate(sum1d)
+  
+  !write(*,*)'summation case I = ',summ
+  !call cpu_time(end_time)
+
+ ! write(*,*)'time for the case I =',end_time-start_time,'seconds'
+ 
+!  call cpu_time(start_time)
+!  allocate(sum2d(d1,d2))
+!  call trapz3d_Neq(func3d,d1,d2,d3,a3,b3,sum2d)
+!  allocate(sum1d(d2))
+!  call trapz2d_Nnoneq(sum2d,d1,d2,y,sum1d)
+!  deallocate(sum2d)
+!  call trapz1d_Neq(sum1d,d1,a1,b1,summ)
+!  deallocate(sum1d)
+!  write(*,*)'summation case II = ',summ
+!  call cpu_time(end_time)
+
+!  write(*,*)'time for the case II =',end_time-start_time,'seconds'
+
+!  call cpu_time(start_time)
+!  allocate(sum2d(d1,d2))
+!  call trapz3d_3Neq(func3d,d1,d2,d3,a3,b3,sum2d)
+!  allocate(sum1d(d2))
+!  call trapz2d_3Nnoneq(sum2d,d1,d2,y,sum1d)
+!  deallocate(sum2d)
+!  call trapz1d_Neq(sum1d,d1,a1,b1,summ)
+!  deallocate(sum1d)
+!  write(*,*)'summation case III = ',summ
+!  call cpu_time(end_time)
+
+ ! write(*,*)'time for the case III =',end_time-start_time,'seconds'
+end subroutine trapezoidal3d
+
+SUBROUTINE trapezoidal2d_yz(func,D1,D2,zi,zf,y,prosum)
+  !USE mpi
+  IMPLICIT NONE
+  INTEGER,INTENT(IN)::D1,D2
+  REAL*8,INTENT(IN),DIMENSION(D1,D2)::func
+  REAL*8,INTENT(IN),DIMENSION(0:D2)::y
+  REAL*8,ALLOCATABLE,DIMENSION(:)::sum1d
+  REAL*8,INTENT(IN)::zi,zf
+  REAL*8,INTENT(OUT)::prosum
+  ALLOCATE(sum1d(D1))
+  CALL trapz2d_noneq(func,D1,D2,y,sum1d)
+  CALL trapz1d_eq(sum1d,D1,zi,zf,prosum)
+  DEALLOCATE(sum1d)
+END SUBROUTINE trapezoidal2d_yz
+
+SUBROUTINE trapezoidal2d_xy(func,D1,D2,xi,xf,y,prosum)
+  !USE mpi
+  IMPLICIT NONE
+  INTEGER,INTENT(IN)::D1,D2
+  REAL*8,INTENT(IN),DIMENSION(D1,D2)::func
+  REAL*8,INTENT(IN),DIMENSION(0:D1)::y
+  REAL*8,ALLOCATABLE,DIMENSION(:)::sum1d
+  REAL*8,INTENT(IN)::xi,xf
+  REAL*8,INTENT(OUT)::prosum
+  ALLOCATE(sum1d(D2))
+  CALL trapz2d_noneq_xy(func,D1,D2,y,sum1d)
+  CALL trapz1d_eq_xy(sum1d,D2,xi,xf,prosum)
+  DEALLOCATE(sum1d)
+END SUBROUTINE trapezoidal2d_xy
+
+SUBROUTINE trapezoidal2d_xz(func,D1,D2,zi,zf,xi,xf,prosum)
+  !USE mpi
+  IMPLICIT NONE
+  INTEGER,INTENT(IN)::D1,D2
+  REAL*8,INTENT(IN),DIMENSION(D1,D2)::func
+  REAL*8,ALLOCATABLE,DIMENSION(:)::sum1d
+  REAL*8,INTENT(IN)::zi,zf,xi,xf
+  REAL*8,INTENT(OUT)::prosum
+  ALLOCATE(sum1d(D1))
+  CALL trapz2d_eq(func,D1,D2,xi,xf,sum1d)
+  CALL trapz1d_eq(sum1d,D1,zi,zf,prosum)
+  DEALLOCATE(sum1d)
+END SUBROUTINE trapezoidal2d_xz

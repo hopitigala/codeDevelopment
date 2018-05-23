@@ -1,0 +1,120 @@
+PROGRAM pointinst
+  USE channhdvariables
+  USE mainparameters
+  USE writedata
+  USE arrayops
+  USE readdata
+  USE mpivariables
+  USE prelimcalvar
+  USE interpoldata
+  use fluctuation
+  USE mpi
+  IMPLICIT NONE
+  REAL*8,ALLOCATABLE,DIMENSION(:)::yp,xp,zp,ypdo,ysdo,ys
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:)::pp,uprime,vprime,wprime,tprime,pprime
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:)::utavg,vtavg,wtavg,ptavg,ttavg
+  REAL*8,ALLOCATABLE,DIMENSION(:,:)::u_ut_max_alo,v_ut_max_alo,t_ut_max_alo
+  REAL*8,ALLOCATABLE,DIMENSION(:,:)::u_vt_max_alo,v_vt_max_alo,t_vt_max_alo
+  REAL*8,ALLOCATABLE,DIMENSION(:,:,:,:)::up,tp
+  INTEGER::timestcount,numtimesteps,i,j,k
+  integer:: icorlavg,icen,node,j0,x0,z0
+  REAL*8::inv,sttime,yprime,itime,dt
+  character*2::prosnum
+  CALL MPI_INIT(ierr)
+  CALL MPI_COMM_RANK(MPI_COMM_WORLD,mynode,ierr)
+  CALL MPI_COMM_SIZE(MPI_COMM_WORLD,numprocs,ierr)
+  
+!  write(*,*)'parallel program initiate'
+  CALL readChannelData()
+  CALL readPostData(sttime,numtimesteps,dt,icorlavg,icen)
+  CALL prelimCal()
+  
+  ALLOCATE(xp(n3),yp(0:n2),zp(n1),ys(0:n2),ypdo(0:n2do+1),ysdo(0:n2do+1))
+  CALL readCoordData(xp,yp,zp)
+  CALL intpolCordi(mynode,numprocs,yp,ys,ypdo,ysdo)
+  
+  ALLOCATE(wtavg(n1,n2do+1,n3),vtavg(n1,n2do+1,n3),&
+       utavg(n1,n2do+1,n3),ttavg(n1,n2do+1,n3),ptavg(n1,n2do+1,n3))
+
+  write(prosnum,'(i2.2)')mynode
+  call read3Darray('../../tmean/1500ts/tmean'//trim(prosnum),'unformatted',ttavg)
+  call read3Darray('../../tmean/1500ts/wmean'//trim(prosnum),'unformatted',wtavg)
+  call read3Darray('../../tmean/1500ts/vmean'//trim(prosnum),'unformatted',vtavg)
+  call read3Darray('../../tmean/1500ts/umean'//trim(prosnum),'unformatted',utavg)
+  call read3Darray('../../tmean/1500ts/pmean'//trim(prosnum),'unformatted',ptavg)
+
+  
+  allocate(u_ut_max_alo(n3-1,numtimesteps+1),v_ut_max_alo(n3-1,numtimesteps+1),t_ut_max_alo(n3-1,numtimesteps+1))
+  allocate(u_vt_max_alo(n3-1,numtimesteps+1),v_vt_max_alo(n3-1,numtimesteps+1),t_vt_max_alo(n3-1,numtimesteps+1))
+  !allocate(u_i_170_1d(numtimesteps+1),u_i_170_3d(numtimesteps+1),u_i_170_5d(numtimesteps+1))
+  timestcount=0
+  write(*,*)'before loop',timestcount
+  ! Time loop starts to read data from field.data files
+!  stime=MPI_WTIME()
+  DO itime = stTime,StTime+(NumTimeSteps*Dt),Dt
+     TimeStCount=TimeStcount+1
+     write(*,*)'time step',timestcount
+     ALLOCATE(up(n1,n2do+1,n3,3),tp(n1,n2do+1,n3,1),pp(n1,n2do+1,n3))
+
+     CALL readTempFieldData(mynode,itime,ypdo,ysdo,up,pp,tp)
+
+     allocate(tprime(n1,n2do+1,n3),wprime(n1,n2do+1,n3),&
+          vprime(n1,n2do+1,n3),uprime(n1,n2do+1,n3),pprime(n1,n2do+1,n3))
+     call fluct3Dmean(tp(:,:,:,1),ttavg,tprime)
+     call fluct3Dmean(up(:,:,:,1),wtavg,wprime)
+     call fluct3Dmean(up(:,:,:,2),vtavg,vprime)
+     call fluct3Dmean(up(:,:,:,3),utavg,uprime)
+     call fluct3Dmean(pp(:,:,:),ptavg,pprime)
+     DEALLOCATE(up,tp,pp)
+     ! location where ut is max along the jets
+     j0=54
+     !x0=164
+     z0=96
+     node=j0/n2do
+     !write(*,*)'node',node
+     if(mynode==node)then
+        yprime=j0-node*n2do
+      !  write(*,*)'yprime',yprime,'node',node
+        do x0=1,n3-1
+           u_ut_max_alo(x0,timestcount)=uprime(z0,yprime,x0)
+           v_ut_max_alo(x0,timestcount)=vprime(z0,yprime,x0)
+           t_ut_max_alo(x0,timestcount)=tprime(z0,yprime,x0)
+        end do
+     end if
+     !location where vt is maximum along the jets
+     j0=55
+     !x0=180
+     z0=96
+     node=j0/n2do
+     if(mynode==node)then
+        yprime=j0-node*n2do
+        do x0=1,n3-1
+           u_vt_max_alo(x0,timestcount)=uprime(z0,yprime,x0)
+           v_vt_max_alo(x0,timestcount)=vprime(z0,yprime,x0)
+           t_vt_max_alo(x0,timestcount)=tprime(z0,yprime,x0)
+        end do
+     end if
+     
+     deallocate(uprime,vprime,tprime,wprime,pprime)
+  END DO
+
+  j0=54
+  node=j0/n2do
+  if(mynode==node)then
+     call print2DMatx(u_ut_max_alo,'u_ut_max_alo.dat')
+     call print2DMatx(v_ut_max_alo,'v_ut_max_alo.dat')
+     call print2DMatx(t_ut_max_alo,'t_ut_max_alo.dat')
+  end if
+  
+  j0=55
+  node=j0/n2do
+  if(mynode==node)then
+     call print2DMatx(u_vt_max_alo,'u_vt_max_alo.dat')
+     call print2DMatx(v_vt_max_alo,'v_vt_max_alo.dat')
+     call print2DMatx(t_vt_max_alo,'t_vt_max_alo.dat')
+  end if
+  
+  etime=MPI_WTIME()
+  
+  CALL MPI_FINALIZE(ierr)
+END PROGRAM pointinst

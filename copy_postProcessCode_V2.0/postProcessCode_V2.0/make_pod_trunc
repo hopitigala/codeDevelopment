@@ -1,0 +1,46 @@
+# beginning of the makefile
+MF=	make_pod
+FC=	mpif90
+#-mcmodel=large
+OLEVEL=	-O2 
+#FOPTS=	-g -traceback	    
+FFLAGS=	$(OLEVEL) $(FOPTS)
+FLIBS =	-L/work/03390/sdharmar/apps/lapack-3.5.0 -llapack -lrefblas -lgfortran
+LFLAGS=	$(FFLAGS)
+EXE=	pod3d
+SRC=	modules.f90\
+	allocArrays.f90\
+	dealoarrays.f90\
+	readFieldData.f90\
+	readMainData.f90\
+	interpol.f90\
+	timeMean.f90\
+	fluctuation.f90\
+	fftpack.f90\
+	integrations.f90\
+	PODmodes_3Ddomain.f90\
+	podProgram_3Ddomain.f90\
+#
+# No need to edit below this line
+#
+.SUFFIXES:
+.SUFFIXES: .f90 .o .mod
+
+OBJ=    $(SRC:.f90=.o)
+
+
+.f90.o:
+	$(FC) $(FFLAGS) -c $(QV_OPT) $(DEFINES) $<
+
+all:$(EXE)
+
+$(EXE): $(OBJ) 
+	$(FC) $(LFLAGS) -o $@ $(OBJ) $(FLIBS)
+
+#$(OBJ): $(MF)
+
+#tar:
+#	tar cvf $(EXE).tar $(MF) $(SRC)
+
+clean:
+	rm -f *.mod $(OBJ) $(EXE) core

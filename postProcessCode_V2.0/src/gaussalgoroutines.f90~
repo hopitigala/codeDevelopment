@@ -1,0 +1,161 @@
+module gaussroutines
+     implicit none
+contains
+    
+!!!!!!!!    		Finds kernel matrix 				!!!!!!!!!
+             !! input ::  'standard deviation' value 		  !!
+             !! output::  'kernel matrix' used for the convolution!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                                                                 
+     subroutine findkernelmatr(sd,outarray)
+          use channhdvariables
+          use prelimcalvar
+          use mainparameters
+          implicit none
+          real*8,intent(in)                   ::sd
+          real*8,intent(out),dimension(:,:)   ::outarray
+          real*8,allocatable,dimension(:,:)   ::kernmat
+          real*8                              ::tot
+          integer                             ::dimn,var1,var2,i,j
+          dimn=size(outarray,1)
+          var1=-(dimn-1)/2
+          var2=-(dimn-1)/2
+          allocate(kernmat(dimn,dimn))
+          do i=1,dimn
+               var2=-(dimn-1)/2
+               do j=1,dimn
+                    kernmat(j,i)=(1/(2*Pi*sd**2))*exp(-(var1**2+var2**2)/(2*sd**2))
+                    var2=var2+1
+               end do
+               var1=var1+1
+          end do 
+          
+          tot=sum(kernmat)
+          outarray=kernmat/tot
+          deallocate(kernmat)          
+     end subroutine findkernelmatr
+
+!!!!!!!!		finds standard deviation value                         !!!!!!!!
+             !! input : ycoordinate value, z node and x node            !!
+             !! output: standard deviation value at the particular point!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     subroutine findsd(ycoord,xnode,coeff_matx,val)
+          use channhdvariables
+          use prelimcalvar
+          use read_sd
+          implicit none
+          integer,intent(in)                ::xnode
+          real*8,intent(out)                ::val
+          real*8,intent(in)                 ::ycoord
+          real*8,intent(in),dimension(:,:)  ::coeff_matx 
+
+          val = coeff_matx(xnode,1)*(ycoord**3)+coeff_matx(xnode,2)*(ycoord**2)+coeff_matx(xnode,3)*(ycoord)+coeff_matx(xnode,4)
+     end subroutine findsd
+
+!!!!!!!!                        Reads the standard deviation input file                     !!!!!!!!
+                !!                    input : standard deviation data files            !!
+                !! output: coefficient matrices in between the jets and behind the jets!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     subroutine read_sd(coeff_79,coeff_96)
+          use channhdvariables
+          use prelimcalvar
+          implicit none
+          integer                            ::i,j
+          real*8,intent(out),dimension(:,:)  ::coeff_79,coeff_96
+          open(23,file='sd_79_coeffiecients.dat'
+          do i=1,n3
+             Read(23,*) (coeff_79(i,j),j=1,4)
+          end do
+          close(23)
+          
+          open(24,file='sd_96_coeffiecients.dat')
+          do i=1,n3
+             Read(24,*) (coeff_96(i,j),j=1,4)
+          end do
+          close(24)
+     end subroutine read_sd
+
+!!!!!!!!                      Finds the whole matrix                                         !!!!!!!!
+              !!    Input : array from each core                                   !!
+              !!    Output: Entire array involving the entire domain               !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     subroutine whole_maker(part_matx,tag,whole_matx)
+          use mpi
+          use mpivariables
+          implicit none
+          integer,intent(in)                  :: tag
+          real*8,intent(in),dimension(:,:,:)  :: part_matx
+          real*8,intent(out),dimension(:,:,:) :: whole_matx
+          integer                             :: i,j,k,d1,d2,d3,p,jj
+          d1=size(part_matx,1)
+          d2=size(part_matx,2)
+          d3=size(part_matx,3)
+
+          if (mynode/=0)
+             call MPI_SEND(part_matx,d1*d2*d3,MPI_REAL8,0,tag,MPI_COMM_WORLD,ierr)
+          else 
+             do k=1,d3
+                  do j=1,d2
+                       jj=j
+                       do i=1,d1
+                            whole_matx(i,jj,k)=part_matx(i,j,k)
+                       end do
+                  end do
+             end do
+             do p=1,(numprocs-1)
+                  call MPI_RECV(part_matx,d1*d2*d3,MPI_REAL8,p,tag,MPI_COMM_WORLD,status,ierr)
+                  do k=1,d3
+                       do j=1,d2
+                            jj=j+p*(d2-1)
+                            do i=1,d1
+                                 whole_matx(i,jj,k)=part_matx
+                            end do
+                       end do
+                  end do
+              end do
+             write(*,*)'the size of the whole matrix is',shape(whole_matx)
+          end if
+     end subroutine whole_maker
+    
+!!!!!!!!              finds convolution for a given point                                    !!!!!!!!
+              !!    Input : kernel matrix, 3D uprime matrix at a given timestep    !!
+              !!    Output: filtered point                                         !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     subroutine convolution(xn,yn,zn,kmatx,3Ddatamatx,point)
+          use prelimcalvar
+          implicit none
+          Real*8,intent(in),dimension(:,:)   :: kmatx
+          Real*8,intent(in),dimension(:,:,:) :: 3Ddatamatx
+          Real*8,intent(out)                 :: point
+          Real*8,allocatable,dimension(:,:)  :: inter_2Draw,2D_rawdata,result_matx
+          integer,intent(in)                 :: xn,yn,zn
+          integer                            :: i,j,ksize
+          ksize = (size(kmatx,1)-1)/2
+          allocate(inter_2Draw(size(3Ddatamatx(:,:,1),1),size(3Ddatamatx(:,:,1),2)))
+          inter_2Draw=3Ddatamatx(:,:,xn)
+          write(*,*) 'size of raw2D_data before padding is',shape(inter_2Draw)
+          allocate(2D_rawdata(size(inter_2Draw,1)+2*ksize,size(inter_2Draw,2)+2*ksize))
+          write(*,*) 'size of raw2D_data after padding is',shape(2D_rawdata) 
+          2D_rawdata(1:ksize,:)=0
+          2D_rawdata(size(2D_rawdata,1)-ksize+1:size(2D_rawdata,1),:)=0
+          2D_rawdata(ksize+1:size(2D_rawdata,1)-ksize,1:ksize)=0
+          2D_rawdata(ksize+1:size(2D_rawdata,1)-ksize,size(2D_rawdata,2)-ksize+1:size(2D_rawdata,2))=0
+          2D_rawdata(ksize+1:size(2D_rawdata,1)-ksize,ksize+1:size(2D_rawdata,2)-ksize)=inter_2Draw
+          deallocate(inter_2Draw)
+          allocate(result_matx(size(kmatx,1),size(kmatx,2)))
+
+          do j=1,size(kmatx,2)
+               do i=1,size(kmatx,1)
+                    result_matx(i,j) = kmatx(i,j)*2D_rawdata(zn+i-1,yn+j-1)
+               end do
+          end do
+          point = sum(result_matx)
+          deallocate(2D_rawdata,result_matx)    
+     end subroutine convolution
+   
+end module gaussroutines
+
+                      

@@ -1,0 +1,139 @@
+MODULE interpoldata
+  IMPLICIT NONE
+CONTAINS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !! This subroutine interpolate coordinates in y-dir to obtain y-coordinates   !!
+  !! at the surface of the finite difference grid. yp coordinates represents    !!
+  !! coordinates at the center of the finite difference grid                    !!
+  !! INPUTS                                                                     !!
+  !!                                                                            !!
+  !!     mynode - processor number                                              !!
+  !!     numprocs- number of processors                                         !!
+  !!     yp - grid poind coordinates at the CV center                           !!
+  !! OUTPUTS::                                                                  !!
+  !!     ys   - coordinates at the boundaries of the control volumes            !!
+  !!     ypdo - array of coordinates for the discritized domain (center)        !!
+  !!     ysdo - array of coordinates for the discritized domain (surface)       !!
+  !! Variables:                                                                 !!   
+  !!     j, jj- index                                                           !!
+  !!     d2 - number of grid points alond direction 2 (y direction)             !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  SUBROUTINE intpolCordi(mynode,numprocs,yp,ys,ypdo,ysdo)
+    IMPLICIT NONE
+    INTEGER,INTENT(IN)::mynode,numprocs
+    REAL*8,INTENT(IN),DIMENSION(0:)::yp
+    REAL*8, INTENT(OUT),DIMENSION(0:)::ys,ysdo,ypdo
+    INTEGER:: j,jj,d2,d2do
+    
+    ! number of grid points in y-dir
+    d2=size(yp)-1
+    d2do= (d2-1)/numprocs
+  ! linear interpolation to find coordinates at the 
+    DO j=1,d2-1
+       ys(j)=(yp(j)+yp(j+1))/2.
+    END DO
+  
+    ys(0)=2.*yp(1)-ys(1)
+    ys(d2)=2.*yp(d2)-ys(d2-1)
+    
+    DO j=0,d2do+1
+       jj=mynode*d2do+J
+       IF(j==0.and.mynode==0)THEN
+          ypdo(j)=yp(1)
+       END IF
+       ypdo(j)=yp(jj)
+       ysdo(j)=ys(jj)
+    END DO
+    
+  END SUBROUTINE intpolCordi
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !! This subroutine interpolate w and u components of the velcosity vector     !!
+  !! to grid centers from grind boundaries                                      !!
+  !! INPUTS::                                                                   !!
+  !!                                                                            !!
+  !!      utemp - array to store velocity vector. last dimension is for         !! 
+  !!              (1= w, 2 = v, 3 =u                                            !! 
+  !!      ttemp - array to store scalar                                         !!
+  !!      ptemp - array to store pressure                                       !!
+  !! OUTPUTS::                                                                  !!
+  !!      up - grid centered instantaneous velocity field                       !!
+  !!      pp - grid centered instantaneous pressure field                       !!
+  !!      tp - grid cnetered instantaneous scalar field                         !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+  SUBROUTINE intpolFieldData(utemp,ptemp,ttemp,ysdo,ypdo,up,pp,tp)
+    IMPLICIT NONE
+    
+    REAL*8,INTENT(IN),DIMENSION(:,0:,:,:)::utemp,ttemp
+    REAL*8,INTENT(IN),DIMENSION(:,0:,:)::ptemp
+    REAL*8,INTENT(IN),DIMENSION(0:)::ysdo,ypdo
+    REAL*8,INTENT(OUT),DIMENSION(:,:,:,:)::up,tp
+    REAL*8,INTENT(OUT),DIMENSION(:,:,:)::pp
+    INTEGER::i,j,k,d1,d2,d3
+
+    d1=size(utemp,1)
+    !size(utemp,2)=10, since in field.data files data stored j=0:9
+    d2=size(utemp,2)
+    d3=size(utemp,3)
+!    write(*,*)'utemp(97,0,288,3)_int',utemp(97,0,288,3)
+
+    DO k=1,d3
+       DO j=1,d2-1
+          DO i=1,d1
+             up(i,j,k,1)=utemp(i,j-1,k,1)+((utemp(i,j,k,1)-utemp(i,j-1,k,1))/(ysdo(j)-ysdo(j-1)))*(ypdo(j)-ysdo(j-1))
+             up(i,j,k,3)=utemp(i,j-1,k,3)+((utemp(i,j,k,3)-utemp(i,j-1,k,3))/(ysdo(j)-ysdo(j-1)))*(ypdo(j)-ysdo(j-1))
+             up(i,j,k,2)=utemp(i,j,k,2)
+             tp(i,j,k,1)=ttemp(i,j,k,1)
+             pp(i,j,k)=ptemp(i,j,k)
+          END DO
+       END DO
+    END DO
+
+    CALL periodicxz(up,pp,tp)
+    
+  END SUBROUTINE intpolFieldData
+  
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !! This subroutine interpolate w and u components of the velcosity vector     !!
+  !! to grid centers from grind boundaries                                      !!
+  !! INPUTS::                                                                   !!
+  !! OUTPUTS::                                                                  !!
+  !!      uinst - grid centered instantaneous velocity field                    !!
+  !!      pinst - grid centered instantaneous pressure field                    !!
+  !!      tinst - grid cnetered instantaneous scalar field                      !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  SUBROUTINE periodicxz(up,pp,tp)
+    IMPLICIT NONE
+    REAL*8,INTENT(INOUT)::up(:,:,:,:),pp(:,:,:),tp(:,:,:,:)
+    INTEGER::i,j,k,d1,d2,d3
+    d1=size(up,1)
+    !size(up,2)=9, since in up is dedined j=1:9
+    d2=size(up,2)
+    d3=size(up,3)
+
+    DO k=1,d3
+       DO j=1,d2
+          up(d1,j,k,1)=up(1,j,k,1)
+          up(d1,j,k,2)=up(1,j,k,2)
+          up(d1,j,k,3)=up(1,j,k,3)
+          tp(d1,j,k,1)=tp(1,j,k,1)
+          pp(d1,j,k)=pp(1,j,k)
+       END DO
+    END DO
+    DO i=1,d1
+       DO j=1,d2
+          up(i,j,d3,1)=up(i,j,1,1)
+          up(i,j,d3,2)=up(i,j,1,2)
+          up(i,j,d3,3)=up(i,j,1,3)
+          tp(i,j,d3,1)=tp(i,j,1,1)
+          pp(i,j,d3)=pp(i,j,1)
+       END DO
+    END DO
+  END SUBROUTINE periodicxz
+
+END MODULE interpoldata

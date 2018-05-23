@@ -1,0 +1,98 @@
+program podrecstfieldwrite
+  use mpi
+  use writedata
+  use readdata
+  use mpivariables
+  use mainparameters
+  use channhdvariables
+  use interpoldata
+  use prelimcalvar
+  use compcorrl
+  
+  implicit none
+  
+  real*8,allocatable,dimension(:)      :: yp,xp,zp,ypdo,ysdo,ys
+  real*8,allocatable,dimension(:,:,:)  :: u_lsm,v_lsm,u_ssm,v_ssm
+  integer                              :: timestcount,itime,numtimesteps,iplane
+  integer                              :: dt,refpoint,x0,t,lsmlim,ireyst
+  integer                              :: icorlavg,icen,var1,var2,j0,k0
+  integer,allocatable,dimension(:)     :: z0
+  real*8                               :: sttime
+  character(len=2)                     :: prosnum
+  character(len=4)                     :: time
+  character(len=30)                    :: filename
+
+  call mpi_init(ierr)
+  call mpi_comm_rank(mpi_comm_world,mynode,ierr)
+  call mpi_comm_size(mpi_comm_world,numprocs,ierr)
+
+  call readChannelData()
+  call readPostData(sttime,numtimesteps,dt,iplane,refpoint,x0,lsmlim,ireyst,icorlavg,icen)
+  call prelimCal()
+
+  allocate(xp(n3),yp(0:n2),zp(n1),ys(0:n2),ypdo(0:n2do+1),ysdo(0:n2do+1))
+
+  call readCoordData(xp,yp,zp)
+  allocate(z0(5))
+  call readcorldata(var1,var2,z0,j0,k0)
+  call intpolCordi(mynode,numprocs,yp,ys,ypdo,ysdo)
+
+  
+  if (iplane==1)then
+     allocate(v_lsm(n2do+1,n3,numtimesteps+1),u_lsm(n2do+1,n3,numtimesteps+1),&
+          u_ssm(n2do+1,n3,numtimesteps+1),v_ssm(n2do+1,n3,numtimesteps+1))
+  elseif(iplane==2)then
+     allocate(v_lsm(n1,n2do+1,numtimesteps+1),u_lsm(n1,n2do+1,numtimesteps+1),&
+          v_ssm(n1,n2do+1,numtimesteps+1),u_ssm(n1,n2do+1,numtimesteps+1))
+  else
+     allocate(v_lsm(n1,n3,numtimesteps+1),u_lsm(n1,n3,numtimesteps+1),&
+          v_ssm(n1,n3,numtimesteps+1),u_ssm(n1,n3,numtimesteps+1))
+  end if
+  write(prosnum,'(i2.2)')mynode
+
+  if (iplane==2)then
+     call read3Darray('u_lsm_yz'//trim(prosnum),'unformatted',u_lsm)
+     call read3Darray('v_lsm_yz'//trim(prosnum),'unformatted',v_lsm)
+     call read3Darray('u_ssm_yz'//trim(prosnum),'unformatted',u_ssm)
+     call read3Darray('v_ssm_yz'//trim(prosnum),'unformatted',v_ssm)
+     do t=1,numtimesteps+1
+        
+        if(t<10)then
+           write(time,'(i1.1)')t
+        elseif(t<100)then
+           write(time,'(i2.2)')t
+        elseif(t<1000)then
+           write(time,'(i3.3)')t
+        else
+           write(time,'(i4.4)')t
+        end if
+        filename='u_lsm_inst_yz_'//trim(time)//'.dat'
+        call sendrecv2dwrite(u_lsm(:,:,t),1,iplane,filename)
+        filename='u_ssm_inst_yz_'//trim(time)//'.dat'
+        call sendrecv2dwrite(u_ssm(:,:,t),2,iplane,filename)
+     end do
+  elseif(iplane==1)then
+     call read3Darray('u_lsm_xy'//trim(prosnum),'unformatted',u_lsm)
+     call read3Darray('v_lsm_xy'//trim(prosnum),'unformatted',v_lsm)
+     call read3Darray('u_ssm_xy'//trim(prosnum),'unformatted',u_ssm)
+     call read3Darray('v_ssm_xy'//trim(prosnum),'unformatted',v_ssm)
+     do t=1,numtimesteps+1
+        
+        if(t<10)then
+           write(time,'(i1.1)')t
+        elseif(t<100)then
+           write(time,'(i2.2)')t
+        elseif(t<1000)then
+           write(time,'(i3.3)')t
+        else
+           write(time,'(i4.4)')t
+        end if
+        filename='u_lsm_inst_xy_'//trim(time)//'.dat'
+        call sendrecv2dwrite(u_lsm(:,:,t),1,iplane,filename)
+        filename='u_ssm_inst_xy_'//trim(time)//'.dat'
+        call sendrecv2dwrite(u_ssm(:,:,t),2,iplane,filename)
+     end do
+  end if
+
+  call tpcorl_inhomo_2dary(var1,var2,numtimesteps,z0(1),j0,k0,iplane)
+end program podrecstfieldwrite
