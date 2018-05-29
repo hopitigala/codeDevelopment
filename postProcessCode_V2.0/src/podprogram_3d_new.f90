@@ -322,9 +322,9 @@ program programpod
            call senRev1dwrite(uv_ssm,3,'u2_ssm.dat')
            call senRev1dwrite(uv_tot,5,'u2_tot.dat')
         else
-           call sendrecv3dwrite(uv_lsm_3d,2,'u2_lsm_3d.dat')
-           call sendrecv3dwrite(uv_ssm_3d,4,'u2_ssm_3d.dat')
-           call sendrecv3dwrite(uv_tot_3d,6,'u2_tot_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,'u2_lsm_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,'u2_ssm_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_tot_3d,6,'u2_tot_3d.dat')
         end if
 
      elseif(ireyst==2)then ! compute v2
@@ -341,9 +341,9 @@ program programpod
            call senRev1dwrite(uv_ssm,3,'v2_ssm.dat')
            call senRev1dwrite(uv_tot,5,'v2_tot.dat')
         else
-           call sendrecv3dwrite(uv_lsm_3d,2,'v2_lsm_3d.dat')
-           call sendrecv3dwrite(uv_ssm_3d,4,'v2_ssm_3d.dat')
-           call sendrecv3dwrite(uv_tot_3d,6,'v2_tot_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,'v2_lsm_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,'v2_ssm_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_tot_3d,6,'v2_tot_3d.dat')
         end if
         
      elseif(ireyst==1)then !compute w2
@@ -361,9 +361,9 @@ program programpod
            call senRev1dwrite(uv_ssm,3,'w2_ssm.dat')
            call senRev1dwrite(uv_tot,5,'w2_tot.dat')
         else
-           call sendrecv3dwrite(uv_lsm_3d,2,'w2_lsm_3d.dat')
-           call sendrecv3dwrite(uv_ssm_3d,4,'w2_ssm_3d.dat')
-           call sendrecv3dwrite(uv_tot_3d,6,'w2_tot_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,'w2_lsm_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,'w2_ssm_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_tot_3d,6,'w2_tot_3d.dat')
         end if
 
      elseif(ireyst==4)then !compute uv
@@ -382,9 +382,9 @@ program programpod
            call senRev1dwrite(uv_ssm,3,'uv_ssm.dat')
            call senRev1dwrite(uv_tot,5,'uv_tot.dat')
         else
-           call sendrecv3dwrite(uv_lsm_3d,2,'uv_lsm_3d.dat')
-           call sendrecv3dwrite(uv_ssm_3d,4,'uv_ssm_3d.dat')
-           call sendrecv3dwrite(uv_tot_3d,6,'uv_tot_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,'uv_lsm_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,'uv_ssm_3d.dat')
+           call sendrecv3dwrite_xy_decom(uv_tot_3d,6,'uv_tot_3d.dat')
         end if
      end if
      deallocate(u_lsm,u_ssm,uv_lsm,uv_ssm,uv_tot,uv_lsm_3d,uv_ssm_3d,uv_tot_3d,v_lsm,v_ssm)
@@ -419,9 +419,9 @@ program programpod
           call senRev1dwrite(uv_ssm,3,'ut_ssm.dat')
           call senRev1dwrite(uv_tot,5,'ut_tot.dat')
        else
-          call sendrecv3dwrite(uv_lsm_3d,2,'ut_lsm_3d.dat')
-          call sendrecv3dwrite(uv_ssm_3d,4,'ut_ssm_3d.dat')
-          call sendrecv3dwrite(uv_tot_3d,6,'ut_tot_3d.dat')
+          call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,'ut_lsm_3d.dat')
+          call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,'ut_ssm_3d.dat')
+          call sendrecv3dwrite_xy_decom(uv_tot_3d,6,'ut_tot_3d.dat')
        end if
 
     elseif(iscfx==2)then ! compute vt
@@ -438,9 +438,9 @@ program programpod
           call senRev1dwrite(uv_ssm,3,'vt_ssm.dat')
           call senRev1dwrite(uv_tot,5,'vt_tot.dat')
        else
-          call sendrecv3dwrite(uv_lsm_3d,2,'vt_lsm_3d.dat')
-          call sendrecv3dwrite(uv_ssm_3d,4,'vt_ssm_3d.dat')
-          call sendrecv3dwrite(uv_tot_3d,6,'vt_tot_3d.dat')
+          call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,'vt_lsm_3d.dat')
+          call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,'vt_ssm_3d.dat')
+          call sendrecv3dwrite_xy_decom(uv_tot_3d,6,'vt_tot_3d.dat')
        end if
         
     elseif(iscfx==1)then !compute wt
@@ -458,9 +458,9 @@ program programpod
           call senRev1dwrite(uv_ssm,3,'wt_ssm.dat')
           call senRev1dwrite(uv_tot,5,'wt_tot.dat')
        else
-          call sendrecv3dwrite(uv_lsm_3d,2,'wt_lsm_3d.dat')
-          call sendrecv3dwrite(uv_ssm_3d,4,'wt_ssm_3d.dat')
-          call sendrecv3dwrite(uv_tot_3d,6,'wt_tot_3d.dat')
+          call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,'wt_lsm_3d.dat')
+          call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,'wt_ssm_3d.dat')
+          call sendrecv3dwrite_xy_decom(uv_tot_3d,6,'wt_tot_3d.dat')
        end if
        deallocate(u_lsm,u_ssm,uv_lsm,uv_ssm,uv_tot,uv_lsm_3d,uv_ssm_3d,uv_tot_3d)
     end if
