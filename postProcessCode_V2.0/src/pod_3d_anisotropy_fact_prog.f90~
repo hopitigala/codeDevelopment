@@ -1,0 +1,106 @@
+program podanisotropyfactor
+  use mpi
+  use mpivariables
+  use mainparameters
+  use readdata
+  use channhdvariables
+  use prelimcalvar
+  use writedata
+  use anisotropyroutines
+  use comppod3d
+
+  implicit none
+  real*8, allocatable, dimension(:)      :: yp,xp,zp,ypdo,ysdo,ys,xpdo,anifac_int
+  real*8, allocatable, dimension(:,:)    :: coe
+  real*8, allocatable, dimension(:,:,:)  :: uu_m, vv_m, ww_m, uv_m, uw_m, vw_m
+  real*8, allocatable, dimension(:,:,:)  :: recnstu_m,recnstv_m,recnstw_m,eta,zeta,anifac
+  real*8, allocatable, dimension(:,:,:,:):: phiu,phiv,phiw
+ 
+
+  integer  :: nt,numtimesteps,t,m,dt,sttime,icorlavg,icen,nfils
+  real*8   :: inv_nt,prosum
+  character(len=2)::prosnum
+
+  call mpi_init(ierr)
+  call mpi_comm_rank(mpi_comm_world,mynode,ierr)
+  call mpi_comm_size(mpi_comm_world,numprocs,ierr)
+
+  call readChannelData()
+  call readpostdata_3dpod(sttime,numtimesteps,dt,icorlavg,icen,nfils)
+  !call readpod3ddata(icomppod,irecnst,lsmlim,ireyst,iscfx,inst,icorl,var1,var2,i0,j0,k0)
+  call prelimcal_3dpod(nfils)
+
+  allocate(xp(n3),yp(0:n2),zp(n1),ys(0:n2),ypdo(0:n2do+1),ysdo(0:n2do+1),xpdo(n3do))
+
+  call readCoordData(xp,yp,zp)
+  call intpolcordi_3dpod(yp,xp,ys,ypdo,ysdo,xpdo)
+
+  nt=numtimesteps+1
+  inv_nt=1.0/real(nt)
+  
+  allocate(phiu(n1m,n2do+1,n3do,nt),phiv(n1m,n2do+1,n3do,nt),phiw(n1m,n2do+1,n3do,nt))
+  write(prosnum,'(i2.2)')mynode
+
+  call read4Darray('/scratch/03390/sdharmar/unperturbed_4pi/postProcess/MPI/pod_new/pod_3d_new/phiu'//trim(prosnum),'unformatted',phiu)
+  call read4Darray('/scratch/03390/sdharmar/unperturbed_4pi/postProcess/MPI/pod_new/pod_3d_new/phiv'//trim(prosnum),'unformatted',phiv)
+  call read4Darray('/scratch/03390/sdharmar/unperturbed_4pi/postProcess/MPI/pod_new/pod_3d_new/phiw'//trim(prosnum),'unformatted',phiw)
+
+! reading coefficients
+  allocate(coe(nt,nt))
+  call read2DMatx(nt,nt,'coeMatx.dat',coe)
+
+  
+  allocate(anifac_int(nt))
+  do m=1,nt
+     allocate(uu_m(n1m,n2do+1,n3do),vv_m(n1m,n2do+1,n3do),ww_m(n1m,n2do+1,n3do),&
+          uv_m(n1m,n2do+1,n3do),uw_m(n1m,n2do+1,n3do),vw_m(n1m,n2do+1,n3do))
+
+     uu_m=0.0
+     vv_m=0.0
+     ww_m=0.0
+     uw_m=0.0
+     vw_m=0.0
+     uv_m=0.0
+     
+     do t=1,nt
+        allocate(recnstu_m(n1m,n2do+1,n3do),recnstv_m(n1m,n2do+1,n3do),recnstw_m(n1m,n2do+1,n3do))
+
+        call modalrecnst_3d(phiu,coe,m,t,recnstu_m)
+        call modalrecnst_3d(phiv,coe,m,t,recnstv_m)
+        call modalrecnst_3d(phiw,coe,m,t,recnstw_m)
+
+        uu_m=uu_m+recnstu_m*recnstu_m
+        vv_m=vv_m+recnstv_m*recnstv_m
+        ww_m=ww_m+recnstw_m*recnstw_m
+        uw_m=uw_m+recnstu_m*recnstw_m
+        uv_m=uv_m+recnstu_m*recnstw_m
+        vw_m=vw_m+recnstv_m*recnstw_m
+        
+        deallocate(recnstu_m,recnstv_m,recnstw_m)
+     end do
+     
+     uu_m=uu_m*inv_nt
+     vv_m=vv_m*inv_nt
+     ww_m=ww_m*inv_nt
+     uw_m=uw_m*inv_nt
+     uv_m=uv_m*inv_nt
+     vw_m=vw_m*inv_nt
+     
+     allocate(eta(n1m,n2do+1,n3do),zeta(n1m,n2do+1,n3do))
+     call reystinv(uu_m,uv_m,uw_m,vv_m,vw_m,ww_m,eta,zeta)
+     deallocate(uu_m,uv_m,uw_m,vv_m,vw_m,ww_m)
+
+     allocate(anifac(n1m,n2do+1,n3do))
+     anifac=1-27*eta*eta+54*zeta*zeta*zeta
+     deallocate(eta,zeta)
+     
+     call trapezoidal3d(anifac,n1m,n2do+1,n3do,xp(1),xp(n3do),yp,zp(1),zp(n1m),prosum)
+     deallocate(anifac)
+     call mpi_reduce(prosum,anifac_int(m),1,mpi_real8,mpi_sum,0,mpi_comm_world,ierr)
+  
+  end do
+  if(mynode==0)then
+     call printVector(anifac_int,'integted_aniso_fac.dat')
+  end if
+  deallocate(anifac_int)
+end program podanisotropyfactor

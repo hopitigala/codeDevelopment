@@ -474,6 +474,35 @@ subroutine checkModeOrthog_3d(x,y,z,phi,shi,chi)
        recnstfld(:,:,:,tstp)=recnstfld(:,:,:,tstp)+coe(tstp,m)*mode(:,:,:,m)
     end do
   end subroutine recnstfield_3d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!! This subroutine reconstruct the velocity field for the mth mode    !!!!!!!!
+!!!! INPUTS:                                                            !!!!!!!!
+!!!!        mode      : eigenfunctions                                  !!!!!!!!
+!!!!        coe       : coefficients                                    !!!!!!!!
+!!!!        m         : mode number                                     !!!!!!!!
+!!!!        tstp      : timestep                                        !!!!!!!!
+!!!! OUTPUT:                                                            !!!!!!!!
+!!!!        recnstfld : reconstructed field                             !!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine modalrecnst_3d(mode,coe,m,tstp,recnstfld)
+    implicit none
+    real*8,dimension(:,:,:,:),intent(in)   ::mode
+    real*8,dimension(:,:),intent(in)       ::coe
+    integer,intent(in)                     ::m,tstp
+    real*8,dimension(:,:,:),intent(out)  ::recnstfld
+
+    integer::d1,d2,d3,d4
+
+    d1=size(mode,1)
+    d2=size(mode,2)
+    d3=size(mode,3)
+    d4=size(mode,4)
+
+
+    recnstfld(:,:,:)=coe(tstp,m)*mode(:,:,:,m)
+  end subroutine modalrecnst_3d
   
   subroutine reyst_ssm_lsm_3d(u,v,ibs,uv1,uv2)
 
