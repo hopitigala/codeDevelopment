@@ -97,7 +97,9 @@ program podanisotropyfactor
      call trapezoidal3d(anifac,n1m,n2do+1,n3do,xp(1),xp(n3do),yp,zp(1),zp(n1m),prosum)
      deallocate(anifac)
      call mpi_reduce(prosum,anifac_int(m),1,mpi_real8,mpi_sum,0,mpi_comm_world,ierr)
-  
+     if (mynode==0) then
+        write(*,*)'mode',m,'is done'
+     end if
   end do
   if(mynode==0)then
      call printVector(anifac_int,'integted_aniso_fac.dat')
