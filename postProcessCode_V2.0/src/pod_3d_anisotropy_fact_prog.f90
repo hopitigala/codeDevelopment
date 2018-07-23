@@ -51,7 +51,7 @@ program podanisotropyfactor
 
   
   allocate(anifac_int(nt))
-  do m=1,nt
+  do m=1,5
      allocate(uu_m(n1m,n2do+1,n3do),vv_m(n1m,n2do+1,n3do),ww_m(n1m,n2do+1,n3do),&
           uv_m(n1m,n2do+1,n3do),uw_m(n1m,n2do+1,n3do),vw_m(n1m,n2do+1,n3do))
 
@@ -73,7 +73,7 @@ program podanisotropyfactor
         vv_m=vv_m+recnstv_m*recnstv_m
         ww_m=ww_m+recnstw_m*recnstw_m
         uw_m=uw_m+recnstu_m*recnstw_m
-        uv_m=uv_m+recnstu_m*recnstw_m
+        uv_m=uv_m+recnstu_m*recnstv_m
         vw_m=vw_m+recnstv_m*recnstw_m
         
         deallocate(recnstu_m,recnstv_m,recnstw_m)
@@ -91,10 +91,10 @@ program podanisotropyfactor
      deallocate(uu_m,uv_m,uw_m,vv_m,vw_m,ww_m)
 
      allocate(anifac(n1m,n2do+1,n3do))
-     anifac=1-27*eta*eta+54*zeta*zeta*zeta
+     anifac=1-27.0*eta+54.0*zeta
      deallocate(eta,zeta)
-     
-     call trapezoidal3d(anifac,n1m,n2do+1,n3do,xp(1),xp(n3do),yp,zp(1),zp(n1m),prosum)
+
+     call trapezoidal3d(anifac,n1m,n2do+1,n3do,xpdo(1),xpdo(n3do),ypdo,zp(1),zp(n1m),prosum)
      deallocate(anifac)
      call mpi_reduce(prosum,anifac_int(m),1,mpi_real8,mpi_sum,0,mpi_comm_world,ierr)
      if (mynode==0) then
