@@ -203,40 +203,40 @@ contains
 !!!!!!       d1,d2,d3: dimensions of the 3D array                            !!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine trapz3d_sum(func3d,x1,x2,x3,dim1,dim2,sumd)
-    implicit none
+!  subroutine trapz3d_sum(func3d,x1,x2,x3,dim1,dim2,sumd)
+!    implicit none
     
-    real*8,intent(in),dimension(:,:,:)::func3d
-    real*8,intent(in),dimension(:)    ::x1,x2,x3
-    integer,intent(in)                ::dim1,dim2
-    real*8,intent(out)                ::sumd
+!    real*8,intent(in),dimension(:,:,:)::func3d
+!    real*8,intent(in),dimension(:)    ::x1,x2,x3
+!    integer,intent(in)                ::dim1,dim2
+!    real*8,intent(out)                ::sumd
 
-    real*8,allocatable,dimension(:,:) ::sum2d
-    integer                           ::d1,d2,d3
+!    real*8,allocatable,dimension(:,:) ::sum2d
+!    integer                           ::d1,d2,d3
     
     ! find the sizes of the input 3D array
-    d1=size(func3d,1)
-    d2=size(func3d,2)
-    d3=size(func3d,3)
+!    d1=size(func3d,1)
+!    d2=size(func3d,2)
+!    d3=size(func3d,3)
 
     ! allocate sum2d and sum1d arrays according to
     ! dim1 and dim2
     
-    if(dim1==1)then
-       allocate(sum2d(d2,d3))
-    elseif(dim1==2)then
-       allocate(sum2d(d1,d3))
-    else
-       allocate(sum2d(d1,d2))
-    end if
+!    if(dim1==1)then
+!       allocate(sum2d(d2,d3))
+!    elseif(dim1==2)then
+!       allocate(sum2d(d1,d3))
+!    else
+!       allocate(sum2d(d1,d2))
+!    end if
     
     ! 1st integration 3D array to 2D array
-    call trapz3d_2dsum(func3d,x1,dim1,sum2d)
+!    call trapz3d_2dsum(func3d,x1,dim1,sum2d)
     ! 2nd integration 2D array to 1D array
-    call trapz2d_sum(sum2d,x1,x2,dim2,sumd)
+!    call trapz2d_sum(sum2d,x1,x2,dim2,sumd)
     ! 3rd integration 1D array to a scalar
    ! call trapz1d_sum(sum1d,x3,sumd)
-  end subroutine trapz3d_sum
+!  end subroutine trapz3d_sum
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -260,34 +260,34 @@ contains
 !!!!!!        d1,d2: dimensions of the 2D array.                             !!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine trapz2d_sum(func2d,x1,x2,dim1,sumd)
-    implicit none
+!  subroutine trapz2d_sum(func2d,x1,x2,dim1,sumd)
+!    implicit none
     
-    real*8,intent(in),dimension(:,:)::func2d
-    real*8,intent(in),dimension(:)    ::x1,x2
-    integer,intent(in)                ::dim1
-    real*8,intent(out)                ::sumd
+!    real*8,intent(in),dimension(:,:)::func2d
+!    real*8,intent(in),dimension(:)    ::x1,x2
+!    integer,intent(in)                ::dim1
+!    real*8,intent(out)                ::sumd
 
-    real*8,allocatable,dimension(:)   ::sum1d
-    integer                           ::d1,d2
+!    real*8,allocatable,dimension(:)   ::sum1d
+!    integer                           ::d1,d2
     
     ! find the sizes of the input 2D array
-    d1=size(func2d,1)
-    d2=size(func2d,2)
+!    d1=size(func2d,1)
+!    d2=size(func2d,2)
 
     ! allocate sum1d and sum1d arrays according to dim
     
-    if(dim1==1)then
-       allocate(sum1d(d2))
-    else
-       allocate(sum1d(d1))
-    end if
+!    if(dim1==1)then
+!       allocate(sum1d(d2))
+!    else
+!       allocate(sum1d(d1))
+!    end if
     
     ! 1st integration 2D array to 1D array
-    call trapz2d_1dsum(func2d,x1,dim1,sum1d)
+!    call trapz2d_1dsum(func2d,x1,dim1,sum1d)
     ! 2nd integration 1D array to a scalar
-    call trapz1d_sum(sum1d,x2,sumd)
-  end subroutine trapz2d_sum
+!    call trapz1d_sum(sum1d,x2,sumd)
+!  end subroutine trapz2d_sum
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!! This subroutine integrate a 3D function over his 3rd dimension of the!!!!!
@@ -302,32 +302,32 @@ contains
 !!!!!! OUTPUTS:                                                              !!!!
 !!!!!!        sum2d: 2d array that shows the summation over the 3rd dimension!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine trapz3d_2dsum(func3d,x,dimen,sum2d)
-    implicit none
-    real*8,intent(in),dimension(:,:,:)::func3d
-    real*8,intent(in),dimension(:)::x
-    integer,intent(in)::dimen
-    real*8,intent(out),dimension(:,:)::sum2d
-    integer::i,d1,d2,d3
-    d1=size(func3d,1)
-    d2=size(func3d,2)
-    d3=size(func3d,3)
+!  subroutine trapz3d_2dsum(func3d,x,dimen,sum2d)
+!    implicit none
+!    real*8,intent(in),dimension(:,:,:)::func3d
+!    real*8,intent(in),dimension(:)::x
+!    integer,intent(in)::dimen
+!    real*8,intent(out),dimension(:,:)::sum2d
+!    integer::i,d1,d2,d3
+!    d1=size(func3d,1)
+!    d2=size(func3d,2)
+!    d3=size(func3d,3)
     
-    sum2d=0.0
-    if(dimen==1)then
-       do i=1,d1-1
-          sum2d=sum2d+0.5*(x(i+1)-x(i))*(func3d(i,:,:)+func3d(i+1,:,:))
-       end do
-    elseif(dimen==2)then
-       do i=1,d2-1
-          sum2d=sum2d+0.5*(x(i+1)-x(i))*(func3d(:,i,:)+func3d(:,i+1,:))
-       end do
-    else
-       do i=1,d3-1
-          sum2d=sum2d+0.5*(x(i+1)-x(i))*(func3d(:,:,i)+func3d(:,:,i+1))
-       end do
-    end if
-  end subroutine trapz3d_2dsum
+!    sum2d=0.0
+!    if(dimen==1)then
+!       do i=1,d1-1
+!          sum2d=sum2d+0.5*(x(i+1)-x(i))*(func3d(i,:,:)+func3d(i+1,:,:))
+!       end do
+!    elseif(dimen==2)then
+!       do i=1,d2-1
+!          sum2d=sum2d+0.5*(x(i+1)-x(i))*(func3d(:,i,:)+func3d(:,i+1,:))
+!       end do
+!    else
+!       do i=1,d3-1
+!          sum2d=sum2d+0.5*(x(i+1)-x(i))*(func3d(:,:,i)+func3d(:,:,i+1))
+!       end do
+!    end if
+!  end subroutine trapz3d_2dsum
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!! This subroutine integrate a 2D function over his 3rd dimension of the!!!!!
@@ -343,27 +343,27 @@ contains
 !!!!!!        sum1d: 1d array that shows the summation over the 3rd dimension!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine trapz2d_1dsum(func2d,x,dimen,sum1d)
-    implicit none
-    real*8,intent(in),dimension(:,:)::func2d
-    real*8,intent(in),dimension(:)::x
-    integer,intent(in)::dimen
-    real*8,intent(out),dimension(:)::sum1d
-    integer::i,d1,d2
-    d1=size(func2d,1)
-    d2=size(func2d,2)
+!  subroutine trapz2d_1dsum(func2d,x,dimen,sum1d)
+!    implicit none
+!    real*8,intent(in),dimension(:,:)::func2d
+!    real*8,intent(in),dimension(:)::x
+!    integer,intent(in)::dimen
+!    real*8,intent(out),dimension(:)::sum1d
+!    integer::i,d1,d2
+!    d1=size(func2d,1)
+!    d2=size(func2d,2)
     
-    sum1d=0.0
-    if(dimen==1)then
-       do i=1,d1-1
-          sum1d=sum1d+0.5*(x(i+1)-x(i))*(func2d(i,:)+func2d(i+1,:))
-       end do
-    else
-       do i=1,d2-1
-          sum1d=sum1d+0.5*(x(i+1)-x(i))*(func2d(:,i)+func2d(:,i+1))
-       end do
-    end if
-  end subroutine trapz2d_1dsum
+!    sum1d=0.0
+!    if(dimen==1)then
+!       do i=1,d1-1
+!          sum1d=sum1d+0.5*(x(i+1)-x(i))*(func2d(i,:)+func2d(i+1,:))
+!       end do
+!    else
+!       do i=1,d2-1
+!          sum1d=sum1d+0.5*(x(i+1)-x(i))*(func2d(:,i)+func2d(:,i+1))
+!       end do
+!    end if
+!  end subroutine trapz2d_1dsum
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -380,20 +380,210 @@ contains
 !!!!!!        sumd: 1d array that shows the summation over the 3rd dimension!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine trapz1d_sum(func1d,x,sumd)
-    implicit none
-    real*8,intent(in),dimension(:)::func1d
-    real*8,intent(in),dimension(:)::x
-    real*8,intent(out)::sumd
-    integer::i,d1
-    d1=size(func1d,1)
+!  subroutine trapz1d_sum(func1d,x,sumd)
+!    implicit none
+!    real*8,intent(in),dimension(:)::func1d
+!    real*8,intent(in),dimension(:)::x
+!    real*8,intent(out)::sumd
+!    integer::i,d1
+!    d1=size(func1d,1)
     
-    sumd=0.0
-    do i=1,d1-1
-       sumd=sumd+0.5*(x(i+1)-x(i))*(func1d(i)+func1d(i+1))
-    end do
-  end subroutine trapz1d_sum
+!    sumd=0.0
+!    do i=1,d1-1
+!       sumd=sumd+0.5*(x(i+1)-x(i))*(func1d(i)+func1d(i+1))
+!    end do
+!  end subroutine trapz1d_sum
+  
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!! These routines are copied from integrations.f90!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+subroutine trapz3d_eq(func3d,d1,d2,d3,xi,xf,sum2d)
+  use channhdvariables
+  use prelimcalvar
+  implicit none
+  integer,intent(in)::d1,d2,d3
+  real*8,intent(in)::func3d(d1,d2,d3)
+  real*8,intent(out)::sum2d(d1,d2)
+  real*8,intent(in)::xi,xf
+  !integer::k
+  real*8::delx
+  integer::k
+  ! integrate over the 3rd dimension of the array
+ ! write(*,*)'rank',mynode,'is in trapz3d'
+  delx=(xf-xi)/real(d3-1)
+  sum2d=0.0
+  sum2d=0.5*(func3d(:,:,1)+func3d(:,:,d3))
+  do k=2,(d3-1)
+     sum2d=sum2d+func3d(:,:,k)
+  end do
+  sum2d=sum2d*delx
+end subroutine trapz3d_eq
+
+subroutine trapz2d_eq(func2d,d1,d2,a,b,sum1d)
+  implicit none
+  integer,intent(in)::d1,d2
+  real*8,intent(in)::func2d(d1,d2)
+  real*8,intent(out)::sum1d(d1)
+  real*8,intent(in)::a,b
+  integer::i
+  real*8::delz
+ ! integrate over the 1st dimension of the array
+  delz=(b-a)/real(d2-1)
+  sum1d=0.0
+  sum1d=sum1d+0.5*(func2d(:,1)+func2d(:,d2))
+  do i=2,(d2-1)
+     sum1d=sum1d+func2d(:,i)
+  end do
+  sum1d=sum1d*delz
+end subroutine trapz2d_eq
+
+subroutine trapz2d_yz(func2d,d1,d2,a,b,sum1d)
+  implicit none
+  integer,intent(in)::d1,d2
+  real*8,intent(in)::func2d(d1,d2)
+  real*8,intent(out)::sum1d(d2)
+  real*8,intent(in)::a,b
+  integer::i
+  real*8::delz
+ ! integrate over the 1st dimension of the array
+  delz=(b-a)/real(d1-1)
+  sum1d=0.0
+  sum1d=sum1d+0.5*(func2d(1,:)+func2d(d1,:))
+  do i=2,(d1-1)
+     sum1d=sum1d+func2d(i,:)
+  end do
+  sum1d=sum1d*delz
+end subroutine trapz2d_yz
+
+subroutine trapz1d_eq(func1d,d1,zi,zf,summ)
+  !use MainVariables
+  implicit none
+  integer,intent(in)::d1
+  real*8,intent(in)::func1d(d1)
+  real*8,intent(in)::zi,zf
+  real*8,intent(out)::summ
+  integer::i
+  real*8::delz
+  !d2=size(func1d)
+  !write(*,*)'rank',mynode,'is in trapz1d'
+  delz=(zf-zi)/real(d1-1)
+  summ=0.0
+  summ=summ+0.5*(func1d(1)+func1d(d1))
+  do i=2,d1-1
+     summ=summ+func1d(i)
+  end do
+  summ=summ*delz
+end subroutine trapz1d_eq
+
+subroutine trapz2d_noneq(func2d,d1,d2,y,sum1d)
+  !use MainVariables
+  implicit none
+  integer,intent(in)::d1,d2
+  real*8,intent(in)::func2d(d1,d2)
+  real*8,intent(in)::y(0:d2)
+  real*8,intent(out)::sum1d(d1)
+  integer::j
+  !write(*,*)'rank',mynode,'is in trapz2d'
+  sum1d=0.0
+  sum1d=sum1d+0.5*(func2d(:,1)*(y(2)-y(1))+func2d(:,d2)*(y(d2)-y(d2-1)))
+  !write(*,*)'sum1d assigned',mynode
+  do j=2,d2-1
+     sum1d=sum1d+func2d(:,j)*(y(j)-y(j-1))
+  end do
+  !write(*,*)'sum1d computed',mynode
+end subroutine trapz2d_noneq
+
+subroutine trapz2d_noneq_xy(func2d,d1,d2,y,sum1d)
+  !use MainVariables
+  implicit none
+  integer,intent(in)::d1,d2
+  real*8,intent(in)::func2d(d1,d2)
+  real*8,intent(in)::y(0:d1)
+  real*8,intent(out)::sum1d(d2)
+  integer::j
+  !write(*,*)'rank',mynode,'is in trapz2d'
+  sum1d=0.0
+  sum1d=sum1d+0.5*(func2d(1,:)*(y(2)-y(1))+func2d(d1,:)*(y(d1)-y(d1-1)))
+  !write(*,*)'sum1d assigned',mynode
+  do j=2,d1-1
+     sum1d=sum1d+func2d(j,:)*(y(j)-y(j-1))
+  end do
+  !write(*,*)'sum1d computed',mynode
+end subroutine trapz2d_noneq_xy
+
+subroutine trapz1d_eq_xy(func1d,d2,xi,xf,summ)
+  !use MainVariables
+  implicit none
+  integer,intent(in)::d2
+  real*8,intent(in)::func1d(d2)
+  real*8,intent(in)::xi,xf
+  real*8,intent(out)::summ
+  integer::i
+  real*8::delx
+  !d2=size(func1d)
+  !write(*,*)'rank',mynode,'is in trapz1d'
+  delx=(xf-xi)/real(d2-1)
+  summ=0.0
+  summ=summ+0.5*(func1d(1)+func1d(d2))
+  do i=2,d2-1
+     summ=summ+func1d(i)
+  end do
+  summ=summ*delx
+end subroutine trapz1d_eq_xy
+
+subroutine trapezoidal3d(func3d,d1,d2,d3,xi,xf,y,zi,zf,summ)
+ ! use MainVariables
+  implicit none
+  integer,intent(in)::d1,d2,d3
+  real*8,intent(in)::func3d(d1,d2,d3)
+  real*8,intent(in)::y(0:d2)
+  real*8,intent(in)::xi,xf,zi,zf
+  real*8,intent(out)::summ
+  real*8,allocatable,dimension(:,:)::sum2d
+  real*8,allocatable,dimension(:)::sum1d
+!  real*8::start_time,end_time
+  !write(*,*)'rank',mynode,'is in trapezoidal3d'
+ ! call cpu_time(start_time)
+  allocate(sum2d(d1,d2))
+  call trapz3d_eq(func3d,d1,d2,d3,xi,xf,sum2d)
+  allocate(sum1d(d1))
+  call trapz2d_noneq(sum2d,d1,d2,y,sum1d)
+  deallocate(sum2d)
+  call trapz1d_eq(sum1d,d1,zi,zf,summ)
+  deallocate(sum1d)
+end subroutine trapezoidal3d
+
+SUBROUTINE trapezoidal2d_yz(func,D1,D2,zi,zf,y,prosum)
+  !USE mpi
+  IMPLICIT NONE
+  INTEGER,INTENT(IN)::D1,D2
+  REAL*8,INTENT(IN),DIMENSION(D1,D2)::func
+  REAL*8,INTENT(IN),DIMENSION(0:D2)::y
+  REAL*8,ALLOCATABLE,DIMENSION(:)::sum1d
+  REAL*8,INTENT(IN)::zi,zf
+  REAL*8,INTENT(OUT)::prosum
+  ALLOCATE(sum1d(D1))
+  CALL trapz2d_noneq(func,D1,D2,y,sum1d)
+  CALL trapz1d_eq(sum1d,D1,zi,zf,prosum)
+  DEALLOCATE(sum1d)
+END SUBROUTINE trapezoidal2d_yz
+SUBROUTINE trapezoidal2d_xz(func,D1,D2,zi,zf,xi,xf,prosum)
+  !USE mpi
+  IMPLICIT NONE
+  INTEGER,INTENT(IN)::D1,D2
+  REAL*8,INTENT(IN),DIMENSION(D1,D2)::func
+  REAL*8,ALLOCATABLE,DIMENSION(:)::sum1d
+  REAL*8,INTENT(IN)::zi,zf,xi,xf
+  REAL*8,INTENT(OUT)::prosum
+  ALLOCATE(sum1d(D1))
+  CALL trapz2d_eq(func,D1,D2,xi,xf,sum1d)
+  CALL trapz1d_eq(sum1d,D1,zi,zf,prosum)
+  DEALLOCATE(sum1d)
+END SUBROUTINE trapezoidal2d_xz
+ 
 
 end module integration
 
@@ -975,8 +1165,8 @@ SUBROUTINE twodfft(ary3d,l1,l2,ftary3d)
   ALLOCATE(C(LDIM,l2))
 
   ! Initialize 2DFFT
-  CALL CFFT2I(l1,l2,WSAVE,LENSAV,IER)
-  IF (l1>d1.AND.l2>d3)THEN
+  call CFFT2I(l1,l2,WSAVE,LENSAV,IER)
+  if (l1>d1.and.l2>d3)then
      do j=1,d2
         do k=1,l2
            do i=1,l1
@@ -987,11 +1177,11 @@ SUBROUTINE twodfft(ary3d,l1,l2,ftary3d)
               end if
            end do
         end do
-        CALL CFFT2F(LDIM,L1,L2,C,WSAVE,LENSAV,WORK,LENWRK,IER)
-        DO K=1,L2
-           DO I = 1,L1
+        call CFFT2F(LDIM,L1,L2,C,WSAVE,LENSAV,WORK,LENWRK,IER)
+        do K=1,L2
+           do I = 1,L1
               ftary3d(i,j,k)=C(i,k)
-           END DO
+           end do
         END DO
      END DO
   ELSE

@@ -25,7 +25,7 @@ program programpod
   real*8,allocatable,dimension(:,:,:)    :: recnstu,recnstv
 
   
-  integer                              :: timestcount,itime,numtimesteps,dt,nfils,m
+  integer                              :: timestcount,itime,numtimesteps,dt,nfils,m,i1toM
   integer                              :: icorl,i0,t,lsmlim,ireyst,inst,tt,iscfx,icomppod
   integer                              :: icorlavg,icen,var1,var2,j0,k0,irecnst
   integer                              :: fexist1,fexist2,fexist3,fexist4,fexist5,fexist6
@@ -40,7 +40,7 @@ program programpod
   
   call readChannelData()
   call readpostdata_3dpod(sttime,numtimesteps,dt,icorlavg,icen,nfils)
-  call readpod3ddata(icomppod,irecnst,lsmlim,ireyst,iscfx,inst,icorl,var1,var2,i0,j0,k0)
+  call readpod3ddata(icomppod,irecnst,lsmlim,ireyst,iscfx,inst,icorl,var1,var2,i0,j0,k0,i1toM)
   call prelimcal_3dpod(nfils)
 
   allocate(xp(n3),yp(0:n2),zp(n1),ys(0:n2),ypdo(0:n2do+1),ysdo(0:n2do+1),xpdo(n3do))
@@ -49,49 +49,49 @@ program programpod
   call intpolcordi_3dpod(yp,xp,ys,ypdo,ysdo,xpdo)
 
   if(icomppod/=0)then
-     allocate(wtavg(n1m,n2do+1,n3do),vtavg(n1m,n2do+1,n3do),&
-          utavg(n1m,n2do+1,n3do),ttavg(n1m,n2do+1,n3do))
+  allocate(wtavg(n1m,n2do+1,n3do),vtavg(n1m,n2do+1,n3do),&
+       utavg(n1m,n2do+1,n3do),ttavg(n1m,n2do+1,n3do))
   
      ! Read mean field
-     write(prosnum,'(i2.2)')mynode
-     call read3Darray('../../tmean/1500ts_3dpod/tmean'//trim(prosnum),'unformatted',ttavg)
-     call read3Darray('../../tmean/1500ts_3dpod/wmean'//trim(prosnum),'unformatted',wtavg)
-     call read3Darray('../../tmean/1500ts_3dpod/vmean'//trim(prosnum),'unformatted',vtavg)
-     call read3Darray('../../tmean/1500ts_3dpod/umean'//trim(prosnum),'unformatted',utavg)
+  write(prosnum,'(i2.2)')mynode
+  call read3Darray('../../tmean/1500ts_3dpod/tmean'//trim(prosnum),'unformatted',ttavg)
+  call read3Darray('../../tmean/1500ts_3dpod/wmean'//trim(prosnum),'unformatted',wtavg)
+  call read3Darray('../../tmean/1500ts_3dpod/vmean'//trim(prosnum),'unformatted',vtavg)
+  call read3Darray('../../tmean/1500ts_3dpod/umean'//trim(prosnum),'unformatted',utavg)
 
-     allocate(uprit(n1m,n2do+1,n3do,numtimesteps+1),vprit(n1m,n2do+1,n3do,numtimesteps+1),&
-          wprit(n1m,n2do+1,n3do,numtimesteps+1),tprit(n1m,n2do+1,n3do,numtimesteps+1))
+  allocate(uprit(n1m,n2do+1,n3do,numtimesteps+1),vprit(n1m,n2do+1,n3do,numtimesteps+1),&
+       wprit(n1m,n2do+1,n3do,numtimesteps+1),tprit(n1m,n2do+1,n3do,numtimesteps+1))
   
-     timestcount=0
-     do itime=int(sttime),(int(sttime)+(numtimesteps*dt)),dt
-        timestcount=timestcount+1
+  timestcount=0
+  do itime=int(sttime),(int(sttime)+(numtimesteps*dt)),dt
+     timestcount=timestcount+1
      
-        allocate(up(n1m,n2do+1,n3do),vp(n1m,n2do+1,n3do),wp(n1m,n2do+1,n3do),&
-             tp(n1m,n2do+1,n3do),pp(n1m,n2do+1,n3do))
+     allocate(up(n1m,n2do+1,n3do),vp(n1m,n2do+1,n3do),wp(n1m,n2do+1,n3do),&
+          tp(n1m,n2do+1,n3do),pp(n1m,n2do+1,n3do))
      
-        call readtemp3dpod(mynode,itime,ypdo,ysdo,up,vp,wp,pp,tp)
-        
-        allocate(tprime(n1m,n2do+1,n3do),wprime(n1m,n2do+1,n3do),vprime(n1m,n2do+1,n3do),&
-             uprime(n1m,n2do+1,n3do))
+     call readtemp3dpod(mynode,itime,ypdo,ysdo,up,vp,wp,pp,tp)
+     
+     allocate(tprime(n1m,n2do+1,n3do),wprime(n1m,n2do+1,n3do),vprime(n1m,n2do+1,n3do),&
+          uprime(n1m,n2do+1,n3do))
 
-        call fluct3Dmean(tp,ttavg,tprime)
-        call fluct3Dmean(wp,wtavg,wprime)
-        call fluct3Dmean(vp,vtavg,vprime)
-        call fluct3Dmean(up,utavg,uprime)
+     call fluct3Dmean(tp,ttavg,tprime)
+     call fluct3Dmean(wp,wtavg,wprime)
+     call fluct3Dmean(vp,vtavg,vprime)
+     call fluct3Dmean(up,utavg,uprime)
      
-        deallocate(up,vp,wp,tp,pp)
+     deallocate(up,vp,wp,tp,pp)
   
-        call fluc_3d(uprime,timestcount,uprit)
-        call fluc_3d(vprime,timestcount,vprit)
-        call fluc_3d(wprime,timestcount,wprit)
-        call fluc_3d(tprime,timestcount,tprit)
+     call fluc_3d(uprime,timestcount,uprit)
+     call fluc_3d(vprime,timestcount,vprit)
+     call fluc_3d(wprime,timestcount,wprit)
+     call fluc_3d(tprime,timestcount,tprit)
 
      
-        deallocate(tprime,uprime,vprime,wprime)
-        write(*,*)'reading time step',itime,'is done by',mynode
-     end do
-     write(*,*)'number of timesteps = ',timestcount
-     
+     deallocate(tprime,uprime,vprime,wprime)
+     write(*,*)'reading time step',itime,'is done by',mynode
+  end do
+  write(*,*)'number of timesteps = ',timestcount
+  !if(icomppod/=0)then
      allocate(c(timestcount,timestcount))
   
      inquire(file='kernalMatx.dat',exist=fexist1)
@@ -103,7 +103,7 @@ program programpod
         write(*,*)'kernal matrix file is not available. computing'
         call compkernal_3d(uprit,vprit,wprit,xpdo,ypdo,zp,c)
      end if
-
+  
      allocate(evec(timestcount,timestcount),eval(timestcount))
      
      inquire(file='eigenvalues.dat',exist=fexist1)
@@ -192,7 +192,7 @@ program programpod
      end if
      deallocate(uprit,vprit,wprit,evec,eval)
   end if
-
+  !deallocate(uprit,vprit,wprit)
   
   !write(*,*)'irecnst before = ',irecnst
 
@@ -295,7 +295,6 @@ program programpod
      allocate(v_lsm(n1m,n2do+1,n3do,timestcount),u_lsm(n1m,n2do+1,n3do,timestcount),& 
           u_ssm(n1m,n2do+1,n3do,timestcount),v_ssm(n1m,n2do+1,n3do,timestcount))
     
-
      ! This section of the program computes Reynolds stresses.
      ! When ireyst/=0 Reynolds stresses are computed.
      ! ireyst=1 for w2
@@ -317,15 +316,22 @@ program programpod
         call reyst_ssm_lsm_3d(u_ssm,u_ssm,ibs,uv_ssm,uv_ssm_3d)
         call reyst_ssm_lsm_3d(u_lsm+u_ssm,u_lsm+u_ssm,ibs,uv_tot,uv_tot_3d)
         ! write u2
-        if(ibs==0)then  
-           call senRev1dwrite(uv_lsm,1,'u2_lsm.dat')
-           call senRev1dwrite(uv_ssm,3,'u2_ssm.dat')
-           call senRev1dwrite(uv_tot,5,'u2_tot.dat')
-        else
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! I commented the following until I figure out how to
+! send and receive the one dimensional array in this case
+! had a problem due to xy decomposition. Now the code prints
+! 3D data either ibs=0 or not. Suranga Dharmarathne
+! 8/12/2018
+!!!!!
+     !   if(ibs==0)then  
+     !      call senRev1dwrite(uv_lsm,1,'u2_lsm.dat')
+     !      call senRev1dwrite(uv_ssm,3,'u2_ssm.dat')
+     !      call senRev1dwrite(uv_tot,5,'u2_tot.dat')
+     !   else
            call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,nfils,'u2_lsm_3d.dat')
            call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,nfils,'u2_ssm_3d.dat')
            call sendrecv3dwrite_xy_decom(uv_tot_3d,6,nfils,'u2_tot_3d.dat')
-        end if
+     !   end if
 
      elseif(ireyst==2)then ! compute v2
         call read4Darray('v_lsm'//trim(prosnum),'unformatted',u_lsm)
@@ -336,15 +342,23 @@ program programpod
         call reyst_ssm_lsm_3d(u_ssm,u_ssm,ibs,uv_ssm,uv_ssm_3d)
         call reyst_ssm_lsm_3d(u_lsm+u_ssm,u_lsm+u_ssm,ibs,uv_tot,uv_tot_3d)
         ! write v2
-        if(ibs==0)then  
-           call senRev1dwrite(uv_lsm,1,'v2_lsm.dat')
-           call senRev1dwrite(uv_ssm,3,'v2_ssm.dat')
-           call senRev1dwrite(uv_tot,5,'v2_tot.dat')
-        else
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! I commented the following until I figure out how to
+! send and receive the one dimensional array in this case
+! had a problem due to xy decomposition. Now the code prints
+! 3D data either ibs=0 or not. Suranga Dharmarathne
+! 8/12/2018
+!!!!!
+
+!        if(ibs==0)then  
+!           call senRev1dwrite(uv_lsm,1,'v2_lsm.dat')
+!           call senRev1dwrite(uv_ssm,3,'v2_ssm.dat')
+!           call senRev1dwrite(uv_tot,5,'v2_tot.dat')
+!        else
            call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,nfils,'v2_lsm_3d.dat')
            call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,nfils,'v2_ssm_3d.dat')
            call sendrecv3dwrite_xy_decom(uv_tot_3d,6,nfils,'v2_tot_3d.dat')
-        end if
+!        end if
         
      elseif(ireyst==1)then !compute w2
         
@@ -356,15 +370,23 @@ program programpod
         call reyst_ssm_lsm_3d(u_ssm,u_ssm,ibs,uv_ssm,uv_ssm_3d)
         call reyst_ssm_lsm_3d(u_lsm+u_ssm,u_lsm+u_ssm,ibs,uv_tot,uv_tot_3d)
         ! write w2
-        if(ibs==0)then  
-           call senRev1dwrite(uv_lsm,1,'w2_lsm.dat')
-           call senRev1dwrite(uv_ssm,3,'w2_ssm.dat')
-           call senRev1dwrite(uv_tot,5,'w2_tot.dat')
-        else
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! I commented the following until I figure out how to
+! send and receive the one dimensional array in this case
+! had a problem due to xy decomposition. Now the code prints
+! 3D data either ibs=0 or not. Suranga Dharmarathne
+! 8/12/2018
+!!!!!
+
+!        if(ibs==0)then  
+!           call senRev1dwrite(uv_lsm,1,'w2_lsm.dat')
+!           call senRev1dwrite(uv_ssm,3,'w2_ssm.dat')
+!           call senRev1dwrite(uv_tot,5,'w2_tot.dat')
+!        else
            call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,nfils,'w2_lsm_3d.dat')
            call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,nfils,'w2_ssm_3d.dat')
            call sendrecv3dwrite_xy_decom(uv_tot_3d,6,nfils,'w2_tot_3d.dat')
-        end if
+!        end if
 
      elseif(ireyst==4)then !compute uv
         
@@ -377,15 +399,23 @@ program programpod
         call reyst_ssm_lsm_3d(u_ssm,v_ssm,ibs,uv_ssm,uv_ssm_3d)
         call reyst_ssm_lsm_3d(u_lsm+u_ssm,v_lsm+v_ssm,ibs,uv_tot,uv_tot_3d)
         ! write uv
-        if(ibs==0)then  
-           call senRev1dwrite(uv_lsm,1,'uv_lsm.dat')
-           call senRev1dwrite(uv_ssm,3,'uv_ssm.dat')
-           call senRev1dwrite(uv_tot,5,'uv_tot.dat')
-        else
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! I commented the following until I figure out how to
+! send and receive the one dimensional array in this case
+! had a problem due to xy decomposition. Now the code prints
+! 3D data either ibs=0 or not. Suranga Dharmarathne
+! 8/12/2018
+!!!!!
+
+!        if(ibs==0)then  
+!           call senRev1dwrite(uv_lsm,1,'uv_lsm.dat')
+!           call senRev1dwrite(uv_ssm,3,'uv_ssm.dat')
+!           call senRev1dwrite(uv_tot,5,'uv_tot.dat')
+!        else
            call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,nfils,'uv_lsm_3d.dat')
            call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,nfils,'uv_ssm_3d.dat')
            call sendrecv3dwrite_xy_decom(uv_tot_3d,6,nfils,'uv_tot_3d.dat')
-        end if
+!        end if
      end if
      deallocate(u_lsm,u_ssm,uv_lsm,uv_ssm,uv_tot,uv_lsm_3d,uv_ssm_3d,uv_tot_3d,v_lsm,v_ssm)
   end if
@@ -410,38 +440,54 @@ program programpod
        call read4Darray('u_ssm'//trim(prosnum),'unformatted',u_ssm)
        
        
-       call reyst_ssm_lsm_3d(u_lsm,tprit,ibs,uv_lsm,uv_lsm_3d)
-       call reyst_ssm_lsm_3d(u_ssm,tprit,ibs,uv_ssm,uv_ssm_3d)
-       call reyst_ssm_lsm_3d(u_lsm+u_ssm,tprit,ibs,uv_tot,uv_tot_3d)
-        ! write u2
-       if(ibs==0)then  
-          call senRev1dwrite(uv_lsm,1,'ut_lsm.dat')
-          call senRev1dwrite(uv_ssm,3,'ut_ssm.dat')
-          call senRev1dwrite(uv_tot,5,'ut_tot.dat')
-       else
+       call sclflx_ssm_lsm_3d(u_lsm,tprit,ibs,uv_lsm,uv_lsm_3d)
+       call sclflx_ssm_lsm_3d(u_ssm,tprit,ibs,uv_ssm,uv_ssm_3d)
+       call sclflx_ssm_lsm_3d(u_lsm+u_ssm,tprit,ibs,uv_tot,uv_tot_3d)
+        ! write ut
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! I commented the following until I figure out how to
+! send and receive the one dimensional array in this case
+! had a problem due to xy decomposition. Now the code prints
+! 3D data either ibs=0 or not. Suranga Dharmarathne
+! 8/12/2018
+!!!!!
+
+    !   if(ibs==0)then  
+    !      call senRev1dwrite(uv_lsm,1,'ut_lsm.dat')
+    !      call senRev1dwrite(uv_ssm,3,'ut_ssm.dat')
+    !      call senRev1dwrite(uv_tot,5,'ut_tot.dat')
+    !   else
           call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,nfils,'ut_lsm_3d.dat')
           call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,nfils,'ut_ssm_3d.dat')
           call sendrecv3dwrite_xy_decom(uv_tot_3d,6,nfils,'ut_tot_3d.dat')
-       end if
+    !   end if
 
     elseif(iscfx==2)then ! compute vt
        call read4Darray('v_lsm'//trim(prosnum),'unformatted',u_lsm)
        call read4Darray('v_ssm'//trim(prosnum),'unformatted',u_ssm)
         
         
-       call reyst_ssm_lsm_3d(u_lsm,tprit,ibs,uv_lsm,uv_lsm_3d)
-       call reyst_ssm_lsm_3d(u_ssm,tprit,ibs,uv_ssm,uv_ssm_3d)
-       call reyst_ssm_lsm_3d(u_lsm+u_ssm,tprit,ibs,uv_tot,uv_tot_3d)
-       ! write v2
-       if(ibs==0)then  
-          call senRev1dwrite(uv_lsm,1,'vt_lsm.dat')
-          call senRev1dwrite(uv_ssm,3,'vt_ssm.dat')
-          call senRev1dwrite(uv_tot,5,'vt_tot.dat')
-       else
+       call sclflx_ssm_lsm_3d(u_lsm,tprit,ibs,uv_lsm,uv_lsm_3d)
+       call sclflx_ssm_lsm_3d(u_ssm,tprit,ibs,uv_ssm,uv_ssm_3d)
+       call sclflx_ssm_lsm_3d(u_lsm+u_ssm,tprit,ibs,uv_tot,uv_tot_3d)
+       ! write vt
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! I commented the following until I figure out how to
+! send and receive the one dimensional array in this case
+! had a problem due to xy decomposition. Now the code prints
+! 3D data either ibs=0 or not. Suranga Dharmarathne
+! 8/12/2018
+!!!!!
+
+!       if(ibs==0)then  
+!          call senRev1dwrite(uv_lsm,1,'vt_lsm.dat')
+!          call senRev1dwrite(uv_ssm,3,'vt_ssm.dat')
+!          call senRev1dwrite(uv_tot,5,'vt_tot.dat')
+!       else
           call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,nfils,'vt_lsm_3d.dat')
           call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,nfils,'vt_ssm_3d.dat')
           call sendrecv3dwrite_xy_decom(uv_tot_3d,6,nfils,'vt_tot_3d.dat')
-       end if
+!       end if
         
     elseif(iscfx==1)then !compute wt
         
@@ -449,19 +495,28 @@ program programpod
        call read4Darray('w_ssm'//trim(prosnum),'unformatted',u_ssm)
        
         
-       call reyst_ssm_lsm_3d(u_lsm,tprit,ibs,uv_lsm,uv_lsm_3d)
-       call reyst_ssm_lsm_3d(u_ssm,tprit,ibs,uv_ssm,uv_ssm_3d)
-       call reyst_ssm_lsm_3d(u_lsm+u_ssm,tprit,ibs,uv_tot,uv_tot_3d)
-       ! write w2
-       if(ibs==0)then  
-          call senRev1dwrite(uv_lsm,1,'wt_lsm.dat')
-          call senRev1dwrite(uv_ssm,3,'wt_ssm.dat')
-          call senRev1dwrite(uv_tot,5,'wt_tot.dat')
-       else
+       call sclflx_ssm_lsm_3d(u_lsm,tprit,ibs,uv_lsm,uv_lsm_3d)
+       call sclflx_ssm_lsm_3d(u_ssm,tprit,ibs,uv_ssm,uv_ssm_3d)
+       call sclflx_ssm_lsm_3d(u_lsm+u_ssm,tprit,ibs,uv_tot,uv_tot_3d)
+       ! write wt
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! I commented the following until I figure out how to
+! send and receive the one dimensional array in this case
+! had a problem due to xy decomposition. Now the code prints
+! 3D data either ibs=0 or not. Suranga Dharmarathne
+! 8/12/2018
+!!!!!
+
+!       if(ibs==0)then  
+!          call senRev1dwrite(uv_lsm,1,'wt_lsm.dat')
+!          call senRev1dwrite(uv_ssm,3,'wt_ssm.dat')
+!          call senRev1dwrite(uv_tot,5,'wt_tot.dat')
+!       else
           call sendrecv3dwrite_xy_decom(uv_lsm_3d,2,nfils,'wt_lsm_3d.dat')
           call sendrecv3dwrite_xy_decom(uv_ssm_3d,4,nfils,'wt_ssm_3d.dat')
           call sendrecv3dwrite_xy_decom(uv_tot_3d,6,nfils,'wt_tot_3d.dat')
-       end if
+!       end if
        deallocate(u_lsm,u_ssm,uv_lsm,uv_ssm,uv_tot,uv_lsm_3d,uv_ssm_3d,uv_tot_3d)
     end if
  end if

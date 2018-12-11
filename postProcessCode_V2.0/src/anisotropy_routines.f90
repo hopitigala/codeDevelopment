@@ -26,9 +26,9 @@ contains
          inv = 1.0/3.0
          fac = 1.0/6.0
 
-         do zco = 1,d1
+         do xco = 1,d3
               do yco = 1,d2
-                  do xco = 1,d3
+                  do zco = 1,d1
                        allocate(b(3,3),b2(3,3),b3(3,3))
                        ke = uu(zco,yco,xco)+vv(zco,yco,xco)+ww(zco,yco,xco)
                        b(1,1) = (uu(zco,yco,xco)/ke)-inv
@@ -41,8 +41,8 @@ contains
                        b(3,2) = (vw(zco,yco,xco)/ke)
                        b(3,3) = (ww(zco,yco,xco)/ke)-inv
  
-                       b2 = matmul(b,b)
-                       b3 = matmul(b2,b)
+                       b2 =b*b
+                       b3 =b2*b
 
 !                       if(xco.eq.140.and.yco.eq.4.and.zco.eq.7)then
 !                              write(*,*)b                              

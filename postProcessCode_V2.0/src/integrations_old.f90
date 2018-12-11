@@ -260,37 +260,6 @@ subroutine trapezoidal3d(func3d,d1,d2,d3,xi,xf,y,zi,zf,summ)
   deallocate(sum2d)
   call trapz1d_eq(sum1d,d1,zi,zf,summ)
   deallocate(sum1d)
-  
-  !write(*,*)'summation case I = ',summ
-  !call cpu_time(end_time)
-
- ! write(*,*)'time for the case I =',end_time-start_time,'seconds'
- 
-!  call cpu_time(start_time)
-!  allocate(sum2d(d1,d2))
-!  call trapz3d_Neq(func3d,d1,d2,d3,a3,b3,sum2d)
-!  allocate(sum1d(d2))
-!  call trapz2d_Nnoneq(sum2d,d1,d2,y,sum1d)
-!  deallocate(sum2d)
-!  call trapz1d_Neq(sum1d,d1,a1,b1,summ)
-!  deallocate(sum1d)
-!  write(*,*)'summation case II = ',summ
-!  call cpu_time(end_time)
-
-!  write(*,*)'time for the case II =',end_time-start_time,'seconds'
-
-!  call cpu_time(start_time)
-!  allocate(sum2d(d1,d2))
-!  call trapz3d_3Neq(func3d,d1,d2,d3,a3,b3,sum2d)
-!  allocate(sum1d(d2))
-!  call trapz2d_3Nnoneq(sum2d,d1,d2,y,sum1d)
-!  deallocate(sum2d)
-!  call trapz1d_Neq(sum1d,d1,a1,b1,summ)
-!  deallocate(sum1d)
-!  write(*,*)'summation case III = ',summ
-!  call cpu_time(end_time)
-
- ! write(*,*)'time for the case III =',end_time-start_time,'seconds'
 end subroutine trapezoidal3d
 
 SUBROUTINE trapezoidal2d_yz(func,D1,D2,zi,zf,y,prosum)

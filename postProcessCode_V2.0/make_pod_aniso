@@ -1,16 +1,17 @@
 #beginning of the makefile
 MF = make_pod_aniso
-FC = mpiifort
-OLEVEL = -O2 -assume buffered_io
+FC = mpif90
+OLEVEL = -O2
+BUFIO = -assume buffered_io
 MKLSW  = -mkl
 #VECOPT = -xhost
 #MKINC  = -I${MKLROOT}/include
 IPO = -ipo
 #DBOPTS = -g -traceback
-FFLAGS = $(OLEVEL) $(DBOPTS) $(VECOPT) $(IPO) $(MKINC) $(MKLSW)
+FFLAGS = $(OLEVEL) $(DBOPTS) $(BUFIO) $(VECOPT) $(IPO) $(MKINC) $(MKLSW)
 #MKLIBS = -L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread -lm -ldl
 #FLIBS  = -L/work/05068/ven_ttac/lonestar/apps/lapack-3.5.0 -llpack -lrefblas -lgfortran
-LFLAGS = $(FFLAGS)
+LFLAGS = $(OLEVEL) $(BUFIO) $(VECOPT) $(IPO) $(MKINC) $(MKLSW)
 vpath %.f90 src
 EXE = podanisoexe
 SRC = modules.f90\
@@ -19,7 +20,6 @@ SRC = modules.f90\
       fftpack.f90\
       mathops.f90\
       arrayops.f90\
-      integrations.f90\
       writeData.f90\
       pod_3d_routines.f90\
       anisotropy_routines.f90\

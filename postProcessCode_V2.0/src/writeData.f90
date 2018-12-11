@@ -146,7 +146,7 @@ CONTAINS
     end if
   end subroutine sendrecv3dwrite
 
-  subroutine sendrecv3dwrite_xy_decom(ary3d,tag,nfils,filename)
+  subroutine sendrecv3dwrite_xy_decom(ary3d,tag,nfils,summ)
     use mpi
     use mpivariables
     use prelimcalvar
@@ -154,10 +154,12 @@ CONTAINS
     implicit none
     real*8,          intent(in),dimension(:,:,:):: ary3d
     integer,         intent(in)                 :: tag,nfils
-    character(len=*),intent(in)                 :: filename
+    !character(len=*),intent(in)                 :: filename
+    real*8,intent(out)                           :: summ
     integer                                     :: i,j,k,d1,d2,d3,p,jj,kk,m,fn
     real*8,allocatable,dimension(:,:,:)         :: globary
     character(len=*),parameter                  :: fmt='(ES13.5E2)'
+    real*8                                      :: temp
     d1=size(ary3d,1)
     d2=size(ary3d,2)
     d3=size(ary3d,3)
@@ -190,14 +192,24 @@ CONTAINS
              end do
           end do
        end do
-       open(10,file=filename)
-       do k=1,filstopros*d3
-          do j=1,(nfils*(d2-1)+1)
-             do i=1,d1
-                write(10,fmt)globary(i,j,k)
+     !  open(10,file=filename)
+     !  do k=1,filstopros*d3
+     !     do j=1,(nfils*(d2-1)+1)
+     !        do i=1,d1
+     !           write(10,fmt)globary(i,j,k)
+     !        end do
+     !     end do
+     !  end do
+     !  close(10)
+       temp=0.
+       do k=1,size(globary,3)
+          do j=1,size(globary,2)
+             do i=1,size(globary,1)
+                temp=temp+globary(i,j,k)
              end do
           end do
        end do
+       summ=temp/real(size(globary,3)*size(globary,2)*size(globary,1))
        deallocate(globary)
     end if
   end subroutine sendrecv3dwrite_xy_decom

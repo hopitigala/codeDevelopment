@@ -114,13 +114,15 @@ subroutine readpostdata_3dpod(sttime,numtimesteps,dt,icorlavg,icen,nfils)
 end subroutine readpostdata_3dpod
 
 
-subroutine readpod3ddata(icomppod,irecnst,lsmlim,ireyst,iscfx,inst,icorl,var1,var2,i0,j0,k0)
+subroutine readpod3ddata(icomppod,irecnst,lsmlim,ireyst,iscfx,inst,icorl,var1,var2,i0,j0,k0,i1toM)
   implicit none
   integer,intent(out)::icomppod,irecnst,lsmlim,ireyst,inst,iscfx
   integer,intent(out)::icorl,var1,var2,i0,j0,k0
+  integer,intent(out)::i1toM ! use only in anisotripy code for pod 
   open(12,file='pod3ddata.dat')
   read(12,*)icomppod,irecnst,lsmlim,ireyst,inst,iscfx
   read(12,*)icorl,var1,var2,i0,j0,k0
+  read(12,*)i1toM
   close(12)
 end subroutine readpod3ddata
 
@@ -253,6 +255,7 @@ subroutine compkernal_3d(u,v,w,x,y,z,c)
   use mpi
   use writedata
   use mpivariables
+  use integration
   implicit none
   real*8,intent(in),dimension(:,:,:,:)  :: u,v,w
   real*8,intent(in),dimension(:)        :: x,y,z
@@ -486,12 +489,13 @@ subroutine checkModeOrthog_3d(x,y,z,phi,shi,chi)
 !!!!        recnstfld : reconstructed field                             !!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine modalrecnst_3d(mode,coe,m,tstp,recnstfld)
+  subroutine modalrecnst_3d(mode,coe,m,tstp,i1toM,recnst_old,recnst_new)
     implicit none
-    real*8,dimension(:,:,:,:),intent(in)   ::mode
-    real*8,dimension(:,:),intent(in)       ::coe
-    integer,intent(in)                     ::m,tstp
-    real*8,dimension(:,:,:),intent(out)  ::recnstfld
+    real*8,dimension(:,:,:,:),intent(in)     :: mode
+    real*8,dimension(:,:),intent(in)         :: coe
+    integer,intent(in)                       :: m,tstp,i1toM
+    real*8,dimension(:,:,:),intent(in)       :: recnst_old
+    real*8,dimension(:,:,:),intent(out)      :: recnst_new
 
     integer::d1,d2,d3,d4
 
@@ -499,19 +503,19 @@ subroutine checkModeOrthog_3d(x,y,z,phi,shi,chi)
     d2=size(mode,2)
     d3=size(mode,3)
     d4=size(mode,4)
-
-
-    recnstfld(:,:,:)=coe(tstp,m)*mode(:,:,:,m)
+    
+    recnst_new(:,:,:)=recnst_old(:,:,:)+coe(tstp,m)*mode(:,:,:,m)
+  
   end subroutine modalrecnst_3d
 
   subroutine modalrecnst_3d_1_M(mode,coe,mode_M,tstp,recnstfld)
     implicit none
     real*8,dimension(:,:,:,:),intent(in)   ::mode
     real*8,dimension(:,:),intent(in)       ::coe
-    integer,intent(in)                     ::m,tstp
+    integer,intent(in)                     ::mode_M,tstp
     real*8,dimension(:,:,:),intent(out)  ::recnstfld
 
-    integer::d1,d2,d3,d4
+    integer::d1,d2,d3,d4,m
 
     d1=size(mode,1)
     d2=size(mode,2)
@@ -820,13 +824,105 @@ subroutine checkModeOrthog_3d(x,y,z,phi,shi,chi)
      elseif(i0<1000)then
         write(zprm,'(i3.3)')i0
      end if
-     if(l_or_s=='l')then
-        call sendrecv3dwrite_xy_decom(covartavg,1,nfils,'corcoe_lsm'//trim(vari1)//'_'//trim(vari2)//'_z0_'//trim(zprm)//'_y0_'//trim(yprm)//'_x0_'//trim(xprm)//'.dat')
-     elseif(l_or_s=='s')then
-        call sendrecv3dwrite_xy_decom(covartavg,2,nfils,'corcoe_ssm'//trim(vari1)//'_'//trim(vari2)//'_z0_'//trim(zprm)//'_y0_'//trim(yprm)//'_x0_'//trim(xprm)//'.dat')
-     end if
+     !if(l_or_s=='l')then
+        !call sendrecv3dwrite_xy_decom(covartavg,1,nfils,'corcoe_lsm'//trim(vari1)//'_'//trim(vari2)//'_z0_'//trim(zprm)//'_y0_'//trim(yprm)//'_x0_'//trim(xprm)//'.dat')
+     !elseif(l_or_s=='s')then
+        !call sendrecv3dwrite_xy_decom(covartavg,2,nfils,'corcoe_ssm'//trim(vari1)//'_'//trim(vari2)//'_z0_'//trim(zprm)//'_y0_'//trim(yprm)//'_x0_'//trim(xprm)//'.dat')
+     !end if
      !call sendrecv3dwrite_xy_decom(covartavg_t,3,nfils,'corcoe_tot'//trim(vari1)//'_'//trim(vari2)//'_z0_'//trim(zprm)//'_y0_'//trim(yprm)//'_x0_'//trim(xprm)//'.dat')
    end subroutine tpcorl_3d_podfield
 
 
- end module comppod3d
+
+
+ subroutine send_recv_elemntadd_3dary_xy_decom(ary3d,tag,nfils,summ)
+    use mpi
+    use mpivariables
+    use prelimcalvar
+    use channhdvariables
+    implicit none
+    real*8,          intent(in),dimension(:,:,:):: ary3d
+    integer,         intent(in)                 :: tag,nfils
+    real*8,intent(out)                          :: summ
+    real*8                                      :: temp
+    integer                                     :: i,j,k,d1,d2,d3,p,jj,kk,m,fn
+    real*8,allocatable,dimension(:,:,:)         :: globary
+    character(len=*),parameter                  :: fmt='(ES13.5E2)'
+    d1=size(ary3d,1)
+    d2=size(ary3d,2)
+    d3=size(ary3d,3)
+
+    
+
+    if (mynode/=0)then
+       call MPI_SEND(ary3d,d1*d2*d3,MPI_REAL8,0,tag,MPI_COMM_WORLD,ierr)
+    else
+       allocate(globary(d1,nfils*(d2-1)+1,filstopros*d3))
+
+       do k=1,d3
+          kk=k
+          do j=1,d2
+             jj=j
+             do i=1,d1
+                globary(i,jj,kk)=ary3d(i,j,k)
+             end do
+          end do
+       end do
+       do p=1,(numprocs-1)
+          call MPI_RECV(ary3d,d1*d2*d3,MPI_REAL8,p,tag,MPI_COMM_WORLD,status,ierr)
+          fn=int((p-mod(p,filstopros))/filstopros)
+          m=mod(p,filstopros)
+          do k=1,d3
+             kk=k+m*d3
+             do j=1,d2
+                jj=j+fn*(d2-1)
+                do i=1,d1
+                   globary(i,jj,kk)=ary3d(i,j,k)
+                end do
+             end do
+          end do
+       end do
+       temp=0.
+       do k=1,size(globary,3)
+          do j=1,size(globary,2)
+             do i=1,size(globary,1)
+                temp=temp+globary(i,j,k)
+             end do
+          end do
+       end do
+       summ=temp/real(size(globary,3)*size(globary,2)*size(globary,1))
+       deallocate(globary)
+    end if
+  end subroutine send_recv_elemntadd_3dary_xy_decom
+!! This routine computes integral length scales of the field reconstructed from each modes 1 to M
+  subroutine comp_2dhomo_corel_pod_modes1_M(u,v,M,intlen)
+    use modules
+    use compfft
+    implicit none
+    real*8,intent(in),dimension(:,:,:)::u,v
+    integer,intent(in)                ::M
+    real*8,intent(out)                ::intlen
+
+
+    integer                           ::d1,d2,d3,i,j,k
+    complex(kind=8),allocatable,dimension(:,:,:):: uprihat,vprihat
+    complex(kind=8),allocatable,dimension(:,:)::refary
+    d1=size(u,1)
+    d2=size(u,2)
+    d3=size(u,3)
+    
+    allocate (uprihat(2*d1,d2,2*d3),vprihat(2*d1,d2,2*d3))
+    l1=size(uprihat,1)
+    l2=size(vprihat,2)
+    
+    call twodfft(u,l1,l2,uprihat)
+    call twodfft(v,l1,l2,vprihat)
+    
+    allocate (refary(l1,l2))
+    
+    call ary2dcnsty0(vprihat,j0,node1,refary)
+    
+    call mpi_bcast(refary
+       
+  end subroutine comp_2dhomo_corel_pod_modes1_M
+end module comppod3d

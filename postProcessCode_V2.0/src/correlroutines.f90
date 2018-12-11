@@ -307,16 +307,16 @@ contains
        l2=size(uprihat,3)
        call twodfft(uprime,l1,l2,uprihat)
        call twodfft(vprime,l1,l2,vprihat)
-       
+       deallocate(uprime,vprime) 
        allocate(refary(l1,l2))
        
        call ary2dcnsty0(vprihat,j0,node1,refary)
        
        call mpi_bcast(refary,l1*l2,mpi_complex16,node1,mpi_comm_world,ierr)
-       covar=uprihat
+      
        allocate(covar(d1,d2,d3))
-       covar=uprime*refval
-       deallocate(uprime,vprime)
+       covar=uprihat()*conjg(refval())
+      
        call loopAdd3DAry(covar,covartavg)
        deallocate(covar)
     end do
