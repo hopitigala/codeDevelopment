@@ -20,7 +20,6 @@ SRC =  modules.f90\
     readData.f90\
     arrayops.f90\
     writeData.f90\
-    integrations.f90\
     fftpack.f90\
     mathops.f90\
     pod_3d_routines.f90\

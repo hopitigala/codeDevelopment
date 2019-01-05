@@ -587,10 +587,79 @@ END SUBROUTINE trapezoidal2d_xz
 
 end module integration
 
-
 module compfft
   implicit none
 contains
+
+ subroutine onedfft1darry(ary1d,l,ftary1d)
+    implicit none
+
+    interface
+       subroutine cfft1i ( n, wsave, lensav, ier )
+         integer ( kind = 4 ) lensav
+         integer ( kind = 4 ) ier
+         integer ( kind = 4 ) iw1
+         integer ( kind = 4 ) n
+         real ( kind = 8 ) wsave(lensav)
+       end subroutine cfft1i
+
+       subroutine cfft1f ( n, inc, c, lenc, wsave, lensav, work, lenwrk, ier )
+         integer ( kind = 4 ) lenc
+         integer ( kind = 4 ) lensav
+         integer ( kind = 4 ) lenwrk
+         complex ( kind = 8 ) c(lenc)
+         integer ( kind = 4 ) ier
+         integer ( kind = 4 ) inc
+         integer ( kind = 4 ) iw1
+         integer ( kind = 4 ) n
+         real ( kind = 8 ) work(lenwrk)
+         real ( kind = 8 ) wsave(lensav)
+       end subroutine cfft1f
+    end interface
+
+    integer,intent(in)                      ::l
+    real*8, intent(in),dimension(:)         ::ary1d
+    complex(kind=8),intent(out),dimension(:)::ftary1d
+    integer                                 ::lensav,lenwrk,ier,inc,lenc,i,d1
+    real*8,allocatable,dimension(:)         ::wsave,work
+    complex(kind=8),allocatable,dimension(:)::c
+
+    d1=size(ary1d)
+    write(*,*)'d1 = ',size(ary1d)
+    inc=1
+    lensav=2*l+int(log(real(l))/log(2.0))+4
+    lenwrk=2*l
+    lenc=inc*(l-1)+1
+    allocate(work(lenwrk),wsave(lensav),c(lenc))
+    call cfft1i(l,wsave,lensav,ier)
+
+    if(l>d1)then
+       write(*,*)'l is greater than d1'
+       do i=1,l
+          if(i<=d1)then
+             c(i)=cmplx(ary1d(i))
+          else
+             c(i)=cmplx(0.)
+          end if
+       end do
+       call cfft1f(l,inc,c,lenc,wsave,lensav,work,lenwrk,ier)
+       do i=1,l
+          ftary1d(i)=c(i)
+       end do
+    else
+       write(*,*)'l is smaller than d1'
+       do i=1,l
+          c(i)=cmplx(ary1d(i))
+       end do
+       call cfft1f(l,inc,c,lenc,wsave,lensav,work,lenwrk,ier)
+       do i=1,l
+          ftary1d(i)=c(i)
+       end do
+    end if
+
+    deallocate(work,wsave,c)
+  end subroutine onedfft1darry
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !! SUBROUTINE oneDFFT3Dary: this subroutine computes 1D fourier transformation!!
   !!                          when 3D array is supplied. This uses subroutines  !!

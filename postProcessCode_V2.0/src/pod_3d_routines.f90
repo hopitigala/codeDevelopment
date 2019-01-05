@@ -1,4 +1,4 @@
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This file contains routines required for 3d POD computation                                     !!!
 module comppod3d
@@ -895,34 +895,104 @@ subroutine checkModeOrthog_3d(x,y,z,phi,shi,chi)
     end if
   end subroutine send_recv_elemntadd_3dary_xy_decom
 !! This routine computes integral length scales of the field reconstructed from each modes 1 to M
-  subroutine comp_2dhomo_corel_pod_modes1_M(u,v,M,intlen)
-    use modules
-    use compfft
-    implicit none
-    real*8,intent(in),dimension(:,:,:)::u,v
-    integer,intent(in)                ::M
-    real*8,intent(out)                ::intlen
+ ! subroutine comp_2dhomo_corel_pod_modes1_M(u,v,M,intlen)
+ !   use modules
+ !   use compfft
+ !   implicit none
+ !   real*8,intent(in),dimension(:,:,:)::u,v
+ !   integer,intent(in)                ::M
+ !   real*8,intent(out)                ::intlen
 
 
-    integer                           ::d1,d2,d3,i,j,k
-    complex(kind=8),allocatable,dimension(:,:,:):: uprihat,vprihat
-    complex(kind=8),allocatable,dimension(:,:)::refary
-    d1=size(u,1)
-    d2=size(u,2)
-    d3=size(u,3)
+!    integer                           ::d1,d2,d3,i,j,k
+!    complex(kind=8),allocatable,dimension(:,:,:):: uprihat,vprihat
+!    complex(kind=8),allocatable,dimension(:,:)::refary
+!    d1=size(u,1)
+!    d2=size(u,2)
+!    d3=size(u,3)
+!    
+!    allocate (uprihat(2*d1,d2,2*d3),vprihat(2*d1,d2,2*d3))
+!    l1=size(uprihat,1)
+!    l2=size(vprihat,2)
     
-    allocate (uprihat(2*d1,d2,2*d3),vprihat(2*d1,d2,2*d3))
-    l1=size(uprihat,1)
-    l2=size(vprihat,2)
+!    call twodfft(u,l1,l2,uprihat)
+!    call twodfft(v,l1,l2,vprihat)
     
-    call twodfft(u,l1,l2,uprihat)
-    call twodfft(v,l1,l2,vprihat)
+!    allocate (refary(l1,l2))
+!!    
+!    call ary2dcnsty0(vprihat,j0,node1,refary)
     
-    allocate (refary(l1,l2))
-    
-    call ary2dcnsty0(vprihat,j0,node1,refary)
-    
-    call mpi_bcast(refary
+!    call mpi_bcast(refary
        
-  end subroutine comp_2dhomo_corel_pod_modes1_M
+!  end subroutine comp_2dhomo_corel_pod_modes1_M
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! This subroutine reconstruct velocity field for each mode and each time step and prints streamwise velocity
+! at a designated y location (y0) along x-direction
+  subroutine velovector_at_y0(timestcount,yloc,filename)
+    use mpi
+    use mpivariables
+    use channhdvariables
+    use prelimcalvar
+    use readdata
+    use writedata
+    implicit none
+    integer,intent(in)                   ::yloc,timestcount
+    character(len=*),intent(in)          ::filename
+    real*8,allocatable,dimension(:,:,:,:)::phiu
+    real*8,allocatable,dimension(:,:)    ::coe
+    real*8,allocatable,dimension(:,:,:)  ::recnst_vel 
+    integer                              ::node0,node1,node2,node3,node4,yprime0,d1,d2,d3,d4,m,t,k
+    character(len=2)                     ::prosnum          
+    !  d1=size(phi,1)
+    !  d2=size(phi,2)
+    !  d3=size(phi,3)
+    !  d4=size(phi,4)
+    ! Reconstructig velocity fields
+    node0=yloc/n2do
+    write(*,*)'node value node0 = ',node0
+    node1=4*node0
+    write(*,*)'node1 = ',node1
+    node2=node1+1
+    write(*,*)'node2 = ',node2
+    node3=node1+2
+    node4=node1+3
+    if(mynode==0)then
+       write(prosnum,'(i2.2)')node1
+    elseif(mynode==1)then
+       write(prosnum,'(i2.2)')node2
+    elseif(mynode==2)then
+       write(prosnum,'(i2.2)')node3
+    elseif(mynode==3)then
+       write(prosnum,'(i2.2)')node4
+    end if
+    allocate(phiu(n1m,n2do+1,n3do,timestcount))
+    allocate(coe(timestcount,timestcount))
+    d1=size(phiu,1)
+    d2=size(phiu,2)
+    d3=size(phiu,3)
+    d4=size(phiu,4)
+    call read4Darray('../pod_3d_new/phiu'//(prosnum),'unformatted',phiu)
+    call read2DMatx(d4,d4,'../pod_3d_new/coeMatx.dat',coe)
+    allocate(recnst_vel(d3,d4,d4))
+    yprime0=yloc-node0
+    do m=1,d4
+       do t=1,d4
+          do k=1,d3
+             recnst_vel(k,t,m)=coe(t,m)*phiu(97,yprime0,k,m)
+          end do
+       end do
+    end do
+    write(prosnum,'(i2.2)')mynode
+    open(31,file=filename//trim(prosnum)//'.dat')
+    do m=1,d4
+       do t=1,d4
+          do k=1,d3
+             write(31,'(es13.5e2)')recnst_vel(k,t,m)
+          end do
+       end do
+    end do
+    close(31)
+    deallocate(recnst_vel)
+  end subroutine velovector_at_y0
 end module comppod3d

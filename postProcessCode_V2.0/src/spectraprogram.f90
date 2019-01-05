@@ -18,13 +18,14 @@ program spectra
   real*8,allocatable,dimension(:)::yp,xp,zp,ypdo,ysdo,ys
   real*8,allocatable,dimension(:,:,:)::utavg,vtavg,wtavg,ttavg,ptavg,pp
   complex(kind=8),allocatable,dimension(:,:,:)::u_hat,v_hat,w_hat,t_hat
-  complex(kind=8),allocatable,dimension(:,:,:)::espec_uu,espec_vv,espec_ww,espec_uv
+ ! complex(kind=8),allocatable,dimension(:,:,:)::espec_uu,espec_vv,espec_ww,espec_uv
+  real*8,allocatable,dimension(:,:,:)::espec_uu,espec_vv,espec_ww,espec_uv
   real*8,allocatable,dimension(:,:,:)::abs_espct_uu,abs_espct_vv,abs_espct_ww,abs_espct_uv
-  complex(kind=8),allocatable,dimension(:,:,:)::espct_uu,espct_vv,espct_ww,espct_uv
+  real*8,allocatable,dimension(:,:,:)::espct_uu,espct_vv,espct_ww,espct_uv
   real*8,allocatable,dimension(:,:,:)::uprime,vprime,wprime,tprime,pprime
   real*8,allocatable,dimension(:,:,:)::phiu,phiv,phiw
-  REAL*8,ALLOCATABLE,DIMENSION(:)::utxzavg,vtxzavg,wtxzavg,ttxzavg
-  REAL*8,ALLOCATABLE,DIMENSION(:,:,:,:)::up,tp
+  REAL*8,allocatable,dimension(:)::utxzavg,vtxzavg,wtxzavg,ttxzavg
+  REAL*8,allocatable,dimension(:,:,:,:)::up,tp
   INTEGER::dt,timestcount,numtimesteps,i,j,k,itime
   integer::icorlavg,icen
   REAL*8::inv,sttime,inv2
@@ -48,10 +49,14 @@ program spectra
        utavg(n1,n2do+1,n3),ttavg(n1,n2do+1,n3),ptavg(n1,n2do+1,n3))
   allocate(espct_uu(n1m,n2do+1,n3m),espct_vv(n1m,n2do+1,n3m),&
        espct_ww(n1m,n2do+1,n3m),espct_uv(n1m,n2do+1,n3m))
-  espct_uu=cmplx(0.)
-  espct_vv=cmplx(0.)
-  espct_ww=cmplx(0.)
-  espct_uv=cmplx(0.)
+ ! espct_uu=cmplx(0.)
+ ! espct_vv=cmplx(0.)
+ ! espct_ww=cmplx(0.)
+ ! espct_uv=cmplx(0.)
+  espct_uu=0.
+  espct_vv=0.
+  espct_ww=0.
+  espct_uv=0.
   wtavg=0.
   utavg=0.
   vtavg=0.
@@ -111,9 +116,9 @@ program spectra
      allocate(phiu(n1m,n2do+1,n3m),phiv(n1m,n2do+1,n3m),&
           phiw(n1m,n2do+1,n3m)) 
 
-     call asignphi(uprime,phiu)
-     call asignphi(vprime,phiv)
-     call asignphi(wprime,phiw)
+     call velflucforspec(uprime,phiu)
+     call velflucforspec(vprime,phiv)
+     call velflucforspec(wprime,phiw)
      
     ! if(mynode==10)then
     !    write(*,*)'phiu(70,4,588) = ',phiu(70,4,588)
@@ -134,17 +139,29 @@ program spectra
      
      allocate(espec_uu(n1m,n2do+1,n3m),espec_vv(n1m,n2do+1,n3m),&
           espec_ww(n1m,n2do+1,n3m),espec_uv(n1m,n2do+1,n3m))
-     
-     call conjmult3dary(u_hat,u_hat,espec_uu)
-     call conjmult3dary(v_hat,v_hat,espec_vv)
-     call conjmult3dary(w_hat,w_hat,espec_ww)
-     call conjmult3dary(u_hat,v_hat,espec_uv)
+    do k=1,n3m
+       do j=1,n2do+1
+          do i=1,n1m
+             espec_uu(i,j,k)=abs(u_hat(i,j,k)*conjg(u_hat(i,j,k))*n1m)
+             espec_vv(i,j,k)=abs(v_hat(i,j,k)*conjg(v_hat(i,j,k))*n1m)
+             espec_ww(i,j,k)=abs(w_hat(i,j,k)*conjg(w_hat(i,j,k))*n1m)
+             espec_uv(i,j,k)=abs(u_hat(i,j,k)*conjg(v_hat(i,j,k))*n1m)
+          end do
+       end do
+    end do
+    ! call conjmult3dary(u_hat,u_hat,espec_uu)
+    ! call conjmult3dary(v_hat,v_hat,espec_vv)
+    ! call conjmult3dary(w_hat,w_hat,espec_ww)
+    ! call conjmult3dary(u_hat,v_hat,espec_uv)
      deallocate(u_hat,v_hat,w_hat,t_hat)
-     
-     call loopadd3dcmplxary(espec_uu,espct_uu)
-     call loopadd3dcmplxary(espec_vv,espct_vv)
-     call loopadd3dcmplxary(espec_ww,espct_ww)
-     call loopadd3dcmplxary(espec_uv,espct_uv)
+     espct_uu=espct_uu+espec_uu
+     espct_vv=espct_vv+espec_vv
+     espct_ww=espct_ww+espec_ww
+     espct_uv=espct_uv+espec_uv
+     !call loopadd3dcmplxary(espec_uu,espct_uu)
+     !call loopadd3dcmplxary(espec_vv,espct_vv)
+     !call loopadd3dcmplxary(espec_ww,espct_ww)
+     !call loopadd3dcmplxary(espec_uv,espct_uv)
      !if(mynode==10)then
      !   write(*,*)'espct_uu(70,4,588) = ',espct_uu(70,4,588)
      !end if
@@ -166,10 +183,10 @@ program spectra
   
   deallocate(espct_uu,espct_vv,espct_ww)
   
-  call spectwrite_2dplane(abs_espct_uu,1,1,96,'espec_uu')
-  call spectwrite_2dplane(abs_espct_vv,2,1,96,'espec_vv')
-  call spectwrite_2dplane(abs_espct_ww,3,1,96,'espec_ww')
-  call spectwrite_2dplane(abs_espct_uv,4,1,96,'espec_uv')
+  call spectwrite_2dplane(abs_espct_uu,1,2,288,'espec_uu')
+  call spectwrite_2dplane(abs_espct_vv,2,2,288,'espec_vv')
+  call spectwrite_2dplane(abs_espct_ww,3,2,288,'espec_ww')
+  call spectwrite_2dplane(abs_espct_uv,4,2,288,'espec_uv')
 
   call mpi_finalize(ierr)
 

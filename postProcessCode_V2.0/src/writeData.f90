@@ -146,7 +146,7 @@ CONTAINS
     end if
   end subroutine sendrecv3dwrite
 
-  subroutine sendrecv3dwrite_xy_decom(ary3d,tag,nfils,summ)
+  subroutine sendrecv3dwrite_xy_decom(ary3d,tag,nfils,filename)
     use mpi
     use mpivariables
     use prelimcalvar
@@ -154,8 +154,8 @@ CONTAINS
     implicit none
     real*8,          intent(in),dimension(:,:,:):: ary3d
     integer,         intent(in)                 :: tag,nfils
-    !character(len=*),intent(in)                 :: filename
-    real*8,intent(out)                           :: summ
+    character(len=*),intent(in)                 :: filename
+    !real*8,intent(out)                           :: summ
     integer                                     :: i,j,k,d1,d2,d3,p,jj,kk,m,fn
     real*8,allocatable,dimension(:,:,:)         :: globary
     character(len=*),parameter                  :: fmt='(ES13.5E2)'
@@ -192,24 +192,24 @@ CONTAINS
              end do
           end do
        end do
-     !  open(10,file=filename)
-     !  do k=1,filstopros*d3
-     !     do j=1,(nfils*(d2-1)+1)
-     !        do i=1,d1
-     !           write(10,fmt)globary(i,j,k)
-     !        end do
-     !     end do
-     !  end do
-     !  close(10)
-       temp=0.
-       do k=1,size(globary,3)
-          do j=1,size(globary,2)
-             do i=1,size(globary,1)
-                temp=temp+globary(i,j,k)
+       open(10,file=filename)
+       do k=1,filstopros*d3
+          do j=1,(nfils*(d2-1)+1)
+             do i=1,d1
+                write(10,fmt)globary(i,j,k)
              end do
           end do
        end do
-       summ=temp/real(size(globary,3)*size(globary,2)*size(globary,1))
+       close(10)
+     ! temp=0.
+     ! do k=1,size(globary,3)
+     !    do j=1,size(globary,2)
+     !       do i=1,size(globary,1)
+     !          temp=temp+globary(i,j,k)
+     !       end do
+     !    end do
+     ! end do
+     ! summ=temp/real(size(globary,3)*size(globary,2)*size(globary,1))
        deallocate(globary)
     end if
   end subroutine sendrecv3dwrite_xy_decom
@@ -265,7 +265,8 @@ CONTAINS
           open(10,file=trim(filename)//'_z'//trim(position)//'.dat')
           do j=1,(numprocs*(d2-1)+1)
              do i=2,d1/2+1
-                write(10,fmt)pi/(i-1),(i-1)*2*globary(i,j,loc)
+                write(10,fmt)pi/(i-1),globary(i,j,loc)
+               ! write(10,fmt)pi/(i-1),(i-1)*2*globary(i,j,loc)
              end do
           end do
           close(10)
@@ -274,7 +275,8 @@ CONTAINS
           open(11,file=trim(filename)//'_x'//trim(position)//'.dat')
           do k=2,d3/2+1
              do j=1,(numprocs*(d2-1)+1)
-                write(11,fmt)8*pi/(k-1),(k-1)*globary(loc,j,k)/4
+                write(11,fmt)8*pi/(k-1),globary(loc,j,k)
+               ! write(11,fmt)8*pi/(k-1),(k-1)*globary(loc,j,k)/4
              end do
           end do
           close(11)
