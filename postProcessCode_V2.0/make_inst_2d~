@@ -1,28 +1,26 @@
-#beginning of the makefile
-MF = make_spec
+beginning of the makefile
+MF = makeinstd
 FC = mpiifort
 OLEVEL = -O2 -assume buffered_io
 MKLSW  = -mkl
 #VECOPT = -xhost
 #MKINC  = -I${MKLROOT}/include
-IPO = -ipo
+#IPO = -ipo
 #DBOPTS = -g -traceback
 FFLAGS = $(OLEVEL) $(DBOPTS) $(VECOPT) $(IPO) $(MKINC)	$(MKLSW)
 #MKLIBS = -L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread -lm -ldl
 #FLIBS = -L/work/03390/sdharmar/lonestar/apps/lapack-3.5.0 -llapack -lrefblas -lgfortran
 LFLAGS = $(FFLAGS)
-EXE =  specexe
 vpath %.f90 src
-SRC =  modules.f90\
+OBJDIR=objects
+EXE = instexe
+SRC = modules.f90\
     interpol.f90\
     readData.f90\
     arrayops.f90\
-    fluctuation.f90\
     writeData.f90\
-    fftpack.f90\
-    mathops.f90\
-    spectraroutines.f90\
-    spectraprogram.f90
+    fluctuation.f90\
+    instantaneous_program.f90
 #
 # No need to edit below this line
 #

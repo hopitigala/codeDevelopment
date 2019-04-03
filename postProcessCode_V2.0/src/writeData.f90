@@ -324,7 +324,7 @@ CONTAINS
              do i=1,(numprocs*(d1-1)+1)
                 write(10,fmt)globary(i,j)
              end do
-          end do
+           end do
           deallocate(globary)
        elseif(iplane==2) then!yz-plane
           allocate(globary(d1,numprocs*(d2-1)+1))

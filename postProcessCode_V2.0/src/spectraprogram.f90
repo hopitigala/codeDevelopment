@@ -183,10 +183,10 @@ program spectra
   
   deallocate(espct_uu,espct_vv,espct_ww)
   
-  call spectwrite_2dplane(abs_espct_uu,1,2,288,'espec_uu')
-  call spectwrite_2dplane(abs_espct_vv,2,2,288,'espec_vv')
-  call spectwrite_2dplane(abs_espct_ww,3,2,288,'espec_ww')
-  call spectwrite_2dplane(abs_espct_uv,4,2,288,'espec_uv')
+  call spectwrite_2dplane(abs_espct_uu,1,2,80,'espec_uu')
+  call spectwrite_2dplane(abs_espct_vv,2,2,80,'espec_vv')
+  call spectwrite_2dplane(abs_espct_ww,3,2,80,'espec_ww')
+  call spectwrite_2dplane(abs_espct_uv,4,2,80,'espec_uv')
 
   call mpi_finalize(ierr)
 
